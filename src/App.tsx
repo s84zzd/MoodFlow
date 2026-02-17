@@ -291,7 +291,6 @@ function App() {
             <SocialShare
               stats={moodStats} 
               isActive={true} 
-              onExportCSV={exportAsCSV}
               recentRecord={recentRecords[0]} // 传递最新记录用于个性化心语
             />
           </div>

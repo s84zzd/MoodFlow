@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Copy, Check, Quote, Download, Share2, Users, Trophy, Gift, Sparkles } from 'lucide-react';
+import { Copy, Check, Quote, Share2, Users, Trophy, Gift, Sparkles } from 'lucide-react';
 import type { MoodStats, MoodRecord } from '@/hooks/useMoodHistory';
 import { inspirationalQuotes, moodQuotes } from '@/data/moods';
 
 interface SocialShareProps {
   stats: MoodStats;
   isActive: boolean;
-  onExportCSV: () => string;
   recentRecord?: MoodRecord; // 最新情绪记录，用于个性化心语
 }
 
@@ -24,7 +23,7 @@ const inviteRewards: InviteReward[] = [
   { milestone: 10, reward: '成为校园情绪大使', icon: <Users className="w-4 h-4" /> },
 ];
 
-export function SocialShare({ stats, isActive, onExportCSV, recentRecord }: SocialShareProps) {
+export function SocialShare({ stats, isActive, recentRecord }: SocialShareProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   
@@ -94,16 +93,6 @@ ${inviteLink}
       // 不支持系统分享，复制到剪贴板
       handleCopy();
     }
-  };
-
-  // Export CSV
-  const handleExportCSV = () => {
-    const csvContent = onExportCSV();
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `moodflow_export_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
   };
 
   // Refresh quote - 优先在当前情绪下切换
@@ -227,26 +216,6 @@ ${inviteLink}
         </div>
       </div>
 
-      {/* Export Section */}
-      <div className={`relative z-10 mt-8 w-full max-w-lg transition-all duration-700 delay-400 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      }`}>
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/60">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-semibold text-gray-700">导出数据</h4>
-              <p className="text-sm text-gray-500">下载 CSV 格式的打卡记录</p>
-            </div>
-            <button
-              onClick={handleExportCSV}
-              className="py-3 px-6 rounded-xl bg-emerald-100 text-emerald-600 font-medium hover:bg-emerald-200 transition-all flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              导出 CSV
-            </button>
-          </div>
-        </div>
-      </div>
     </section>
   );
 }
