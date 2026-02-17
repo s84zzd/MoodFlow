@@ -1,0 +1,71 @@
+name: 🐛 Bug 报告 | Bug Report
+description: 报告一个问题 | Report a bug
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢报告问题！请填写以下信息帮助我们快速定位和修复。
+        Thanks for reporting! Please fill in the information below to help us fix it quickly.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述 | Description
+      description: 清晰简洁地描述问题 | A clear description of the bug
+      placeholder: 发生了什么？| What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤 | Steps to Reproduce
+      description: 如何复现这个问题 | How to reproduce the bug
+      placeholder: |
+        1. 进入 '...' | Go to '...'
+        2. 点击 '...' | Click on '...'
+        3. 看到错误 | See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为 | Expected Behavior
+      description: 描述你期望的正确行为 | What you expected to happen
+      placeholder: 应该发生什么？| What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图 | Screenshots
+      description: 如有必要，添加截图 | Add screenshots if applicable
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: 浏览器 | Browser
+      description: 你使用的浏览器 | Your browser
+      options:
+        - Chrome
+        - Safari
+        - Firefox
+        - Edge
+        - 其他 | Other
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本 | Version
+      description: 应用版本号 | App version
+      placeholder: v1.0.0
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其他信息 | Additional Context
+      description: 其他相关信息 | Any other relevant information

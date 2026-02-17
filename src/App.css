@@ -1,0 +1,196 @@
+/* App-specific styles */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FEF7F4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #F8C8DC, #A7C7E7);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #F9A8C8, #7FB3E3);
+}
+
+/* Selection color */
+::selection {
+  background: rgba(248, 200, 220, 0.5);
+  color: #4A4A4A;
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid #F8C8DC;
+  outline-offset: 2px;
+}
+
+/* Glass morphism enhancement */
+.glass-effect {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Mood card enhancements */
+.mood-card {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.mood-card:hover {
+  transform: translateY(-8px) scale(1.05);
+}
+
+.mood-card.selected {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* Scene card enhancements */
+.scene-card {
+  will-change: transform;
+}
+
+.scene-card:hover {
+  transform: translateY(-12px);
+}
+
+.scene-card.selected {
+  transform: scale(1.08);
+}
+
+/* Activity card enhancements */
+.activity-card {
+  will-change: transform, box-shadow;
+}
+
+.activity-card:hover {
+  transform: translateY(-20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Animation delays */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-500 { animation-delay: 500ms; }
+.animation-delay-600 { animation-delay: 600ms; }
+.animation-delay-700 { animation-delay: 700ms; }
+.animation-delay-800 { animation-delay: 800ms; }
+.animation-delay-900 { animation-delay: 900ms; }
+
+/* Button hover effects */
+button {
+  will-change: transform;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mood-card {
+    transform: scale(0.9);
+  }
+  
+  .scene-card {
+    transform: scale(0.95);
+  }
+}
+
+/* Print styles */
+@media print {
+  .glass-effect {
+    background: white !important;
+    backdrop-filter: none !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}

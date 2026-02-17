@@ -1,0 +1,47 @@
+name: 💡 功能建议 | Feature Request
+description: 提出新功能建议 | Suggest a new feature
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢提出功能建议！请描述你的想法。
+        Thanks for the feature request! Please describe your idea.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 功能描述 | Feature Description
+      description: 清晰描述你想要的功能 | A clear description of the feature
+      placeholder: 这个功能是什么？| What is this feature?
+    validations:
+      required: true
+
+  - type: textarea
+    id: usecase
+    attributes:
+      label: 使用场景 | Use Case
+      description: 描述这个功能的使用场景 | Describe the use case
+      placeholder: 什么时候会用到这个功能？| When would you use this?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 期望解决方案 | Proposed Solution
+      description: 描述你期望的实现方式 | How you think it should work
+      placeholder: 你希望如何实现？| How should it be implemented?
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案 | Alternatives
+      description: 描述你考虑过的替代方案 | Any alternative solutions
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其他信息 | Additional Context
+      description: 其他相关信息或截图 | Any other context or screenshots
