@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, Heart, Calendar, Download, X, Edit2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import QRCode from 'qrcode';
 import type { MoodRecord } from '@/hooks/useMoodHistory';
 import { moods } from '@/data/moods';
 
@@ -34,14 +35,41 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragStart = useRef({ x: 0, y: 0 });
   const currentPosition = useRef({ x: 0, y: 0 });
+  
+  // 二维码状态
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
 
-  // 从localStorage加载用户名
+  // 从 localStorage 加载用户名
   useEffect(() => {
     const savedUsername = localStorage.getItem(STORAGE_KEY_USERNAME);
     if (savedUsername) {
       setUsername(savedUsername);
     }
   }, []);
+    
+  // 生成二维码
+  useEffect(() => {
+    const generateQRCode = async () => {
+      try {
+        const url = 'https://moodflow-tau.vercel.app'; // 生产环境 URL
+        const qrDataUrl = await QRCode.toDataURL(url, {
+          width: 200,
+          margin: 1,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        });
+        setQrCodeUrl(qrDataUrl);
+      } catch (error) {
+        console.error('生成二维码失败:', error);
+      }
+    };
+      
+    if (isOpen) {
+      generateQRCode();
+    }
+  }, [isOpen]);
 
   // 每次打开卡片时，都进入编辑模式让用户确认/修改位置
   useEffect(() => {
@@ -359,11 +387,19 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                     <p>记录情绪，关爱自己</p>
                     <p>moodflow.app</p>
                   </div>
-                  {/* 二维码占位 */}
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
-                    <div className="w-9 h-9 sm:w-12 sm:h-12 border-2 border-gray-300 rounded flex items-center justify-center">
-                      <span className="text-gray-400 text-[10px] sm:text-xs">QR</span>
-                    </div>
+                  {/* 二维码 */}
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg overflow-hidden p-1">
+                    {qrCodeUrl ? (
+                      <img 
+                        src={qrCodeUrl} 
+                        alt="MoodFlow QR Code" 
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="w-full h-full border-2 border-gray-300 rounded flex items-center justify-center">
+                        <span className="text-gray-400 text-[10px] sm:text-xs">QR</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
