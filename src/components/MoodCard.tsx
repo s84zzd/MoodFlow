@@ -141,14 +141,15 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
     setIsSaving(true);
     
     try {
-      // 临时移除拖拽相关的样式，确保截图干净
+      // 临时修改样式以确保截图稳定
       const originalTransform = cardRef.current.style.transform;
       const originalCursor = cardRef.current.style.cursor;
+      
       cardRef.current.style.transform = 'none';
       cardRef.current.style.cursor = 'default';
       
-      // 等待字体和 emoji 渲染完成
-      await document.fonts.ready;
+      // 等待一帧确保样式应用
+      await new Promise(resolve => requestAnimationFrame(resolve));
       
       const canvas = await html2canvas(cardRef.current, {
         scale: 2,
@@ -156,7 +157,27 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
         allowTaint: true,
         backgroundColor: null,
         logging: false,
-        onclone: (_clonedDoc, clonedElement) => {
+        imageTimeout: 15000,
+        onclone: (clonedDoc, clonedElement) => {
+          // 确保克隆的文档有正确的视口
+          clonedDoc.body.style.margin = '0';
+          clonedDoc.body.style.padding = '0';
+          
+          // 强制设置背景渐变（手机端可能需要）
+          const currentMoodId = currentMood?.id || 'calm';
+          const gradients: Record<string, string> = {
+            anxiety: 'linear-gradient(to bottom right, #f97316, #ec4899)',
+            melancholy: 'linear-gradient(to bottom right, #3b82f6, #8b5cf6)',
+            happy: 'linear-gradient(to bottom right, #eab308, #f97316)',
+            regret: 'linear-gradient(to bottom right, #8b5cf6, #ec4899)',
+            calm: 'linear-gradient(to bottom right, #22c55e, #14b8a6)',
+            anticipation: 'linear-gradient(to bottom right, #f97316, #eab308)',
+            content: 'linear-gradient(to bottom right, #ec4899, #f43f5e)',
+            doubt: 'linear-gradient(to bottom right, #d97706, #f97316)',
+            stress: 'linear-gradient(to bottom right, #dc2626, #ec4899)',
+          };
+          clonedElement.style.background = gradients[currentMoodId] || gradients.calm;
+          
           // 在克隆的元素上确保 emoji 字体正确
           const iconElements = clonedElement.querySelectorAll('[data-emoji]');
           iconElements.forEach(el => {
