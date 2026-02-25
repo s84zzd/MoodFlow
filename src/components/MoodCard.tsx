@@ -106,11 +106,11 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div 
-        className="relative w-full max-w-md"
+        className="relative w-full max-w-[340px] sm:max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 关闭按钮 - 移至卡片内部，增大触摸区域 */}
@@ -200,22 +200,22 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           </div>
         ) : (
           <>
-            {/* 卡片主体 */}
+            {/* 卡片主体 - 移动端优化尺寸 */}
             <div
               ref={cardRef}
-              className={`relative overflow-hidden rounded-3xl shadow-2xl bg-gradient-to-br ${getGradient(currentMood?.id)}`}
+              className={`relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br ${getGradient(currentMood?.id)} max-h-[80vh] sm:max-h-none`}
             >
               {/* 装饰元素 */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+              <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-48 sm:h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
               
-              {/* 内容区域 */}
-              <div className="relative p-8 text-white">
+              {/* 内容区域 - 减小内边距 */}
+              <div className="relative p-5 sm:p-8 text-white">
                 {/* 头部：日期位置与Logo同行 */}
-                <div className="flex items-start justify-between mb-6">
+                <div className="flex items-start justify-between mb-4 sm:mb-6">
                   {/* 左侧：日期和位置 */}
                   <div>
-                    <div className="flex items-center gap-1 text-white/95 text-sm font-medium drop-shadow-sm mb-1">
+                    <div className="flex items-center gap-1 text-white/95 text-xs sm:text-sm font-medium drop-shadow-sm mb-1">
                       <Calendar className="w-3 h-3" />
                       <span>{getFormattedDate()}</span>
                     </div>
@@ -232,33 +232,33 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                     )}
                   </div>
                   {/* 右侧：Logo */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center">
-                      <Heart className="w-4 h-4 text-white" />
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center">
+                      <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </div>
-                    <span className="font-bold text-lg text-white drop-shadow-sm">MoodFlow</span>
+                    <span className="font-bold text-sm sm:text-lg text-white drop-shadow-sm">MoodFlow</span>
                   </div>
                 </div>
 
                 {/* 情绪展示 */}
                 {currentMood && (
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-20 h-20 rounded-2xl bg-white/40 backdrop-blur-sm flex items-center justify-center text-5xl shadow-lg border border-white/30">
+                  <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
+                    <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 backdrop-blur-sm flex items-center justify-center text-3xl sm:text-5xl shadow-lg border border-white/30">
                       {currentMood.icon}
                     </div>
                     <div>
-                      <p className="text-2xl font-bold mb-1 text-white drop-shadow-md">{currentMood.name}</p>
-                      <p className="text-white/95 text-sm font-medium drop-shadow-sm">{currentMood.description}</p>
+                      <p className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1 text-white drop-shadow-md">{currentMood.name}</p>
+                      <p className="text-white/95 text-xs sm:text-sm font-medium drop-shadow-sm">{currentMood.description}</p>
                     </div>
                   </div>
                 )}
 
                 {/* 每日心语 - 丰富版 */}
-                <div className="bg-white/25 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-white/30 shadow-lg">
-                  <p className="text-lg leading-relaxed mb-4 font-semibold text-white drop-shadow-sm">
+                <div className="bg-white/25 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 border border-white/30 shadow-lg">
+                  <p className="text-sm sm:text-lg leading-relaxed mb-3 sm:mb-4 font-semibold text-white drop-shadow-sm">
                     "{quote.text}"
                   </p>
-                  <p className="text-white text-base text-right font-bold drop-shadow-md tracking-wide">
+                  <p className="text-white text-sm sm:text-base text-right font-bold drop-shadow-md tracking-wide">
                     —— {username || quote.author}
                   </p>
                 </div>
@@ -270,9 +270,9 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                     <p>moodflow.app</p>
                   </div>
                   {/* 二维码占位 */}
-                  <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                    <div className="w-12 h-12 border-2 border-gray-300 rounded flex items-center justify-center">
-                      <span className="text-gray-400 text-xs">QR</span>
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="w-9 h-9 sm:w-12 sm:h-12 border-2 border-gray-300 rounded flex items-center justify-center">
+                      <span className="text-gray-400 text-[10px] sm:text-xs">QR</span>
                     </div>
                   </div>
                 </div>
