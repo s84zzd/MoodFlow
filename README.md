@@ -57,15 +57,29 @@
 - 活动涵盖：呼吸练习、冥想、 journaling、运动、音乐疗愈等
 
 ### 🤖 AI 情绪建议
-- 基于情绪模式的个性化洞察
-- 即时情绪调节技巧
-- 长期心理健康建议
+- **混合模式**：预设建议库（72条）+ DeepSeek AI 生成
+- **情绪导向**：9种情绪 × 8条专业建议
+- **个性化洞察**：基于打卡数据的智能分析
+- **每日限额**：8次AI生成，避免过度依赖
+
+### 💳 情绪分享卡片
+- 精美渐变背景卡片
+- 自定义用户落款和位置
+- 情绪绑定每日心语（99条）
+- 支持编辑和保存为图片
+
+### 📚 情绪科普知识
+- 9种基础情绪深度科普
+- 情绪定义、成因、应对建议
+- 折叠式卡片设计
+- 帮助用户理解和管理情绪
 
 ### 📊 数据统计与分享
-- 情绪分布统计
-- 连续打卡天数
+- 情绪分布统计（彩虹饼图）
+- 连续打卡天数追踪
 - 周/月趋势分析
 - 支持导出 CSV 数据
+- 每日心语社交分享
 
 ### 💾 本地数据持久化
 - 所有数据存储在浏览器 localStorage
@@ -99,6 +113,30 @@ npm run build
 npm run preview
 ```
 
+## 🔧 环境变量配置
+
+### 本地开发
+复制 `.env.example` 为 `.env` 并配置：
+
+```bash
+cp .env.example .env
+```
+
+### Vercel 部署
+在项目设置中添加以下环境变量：
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `VITE_DEEPSEEK_API_KEY` | DeepSeek API Key | `sk-...` |
+| `VITE_DEEPSEEK_API_URL` | API 地址 | `https://api.deepseek.com/v1/chat/completions` |
+| `VITE_DEEPSEEK_MODEL` | 模型名称 | `deepseek-chat` |
+| `VITE_ENABLE_AI` | 启用AI功能 | `true` / `false` |
+| `VITE_ENABLE_CHECKIN_LIMIT` | 打卡限制 | `true` (生产) / `false` (开发) |
+| `VITE_ENABLE_AI_ADVICE_LIMIT` | AI建议限制 | `true` (生产) / `false` (开发) |
+| `VITE_ENABLE_REPORT_LIMIT` | 报告生成限制 | `true` (生产) / `false` (开发) |
+
+⚠️ **安全提醒**：不要将真实的 API Key 提交到代码仓库！
+
 ## 🏗️ 技术栈
 
 - **框架**: React 19.2 + TypeScript 5.9
@@ -114,48 +152,64 @@ npm run preview
 src/
 ├── components/          # 可复用组件
 │   ├── ui/             # shadcn/ui 基础组件
-│   └── GentleReminder.tsx  # 温和提醒弹窗
+│   ├── CheckInCompleteModal.tsx  # 打卡完成弹窗
+│   ├── MoodCard.tsx    # 情绪分享卡片
+│   ├── DailyLimitReminder.tsx    # 打卡限制提醒
+│   ├── DebugReportCount.tsx      # 调试工具（开发环境）
+│   └── TestDataButton.tsx        # 测试数据生成（开发环境）
 ├── sections/           # 页面区块组件
 │   ├── MoodSelector.tsx    # 情绪选择
 │   ├── SceneSelector.tsx   # 场景选择
 │   ├── ActivityRecommendations.tsx  # 活动推荐
 │   ├── SocialShare.tsx     # 社交分享
-│   └── AIAdvice.tsx        # AI建议
+│   ├── AIAdvice.tsx        # AI建议
+│   ├── KnowledgeView.tsx   # 情绪科普知识
+│   └── Profile.tsx         # 个人中心
 ├── hooks/              # 自定义 Hooks
 │   ├── useMoodHistory.ts   # 情绪历史记录
 │   ├── useCustomActivities.ts  # 自定义活动
-│   └── useAIAdvice.ts      # AI建议生成
+│   ├── useAIAdvice.ts      # AI建议生成
+│   └── useStatistics.ts    # 统计分析
+├── services/           # 服务层
+│   ├── aiService.ts        # DeepSeek AI 服务
+│   └── reportService.ts    # 周报月报服务
 ├── data/               # 静态数据
-│   └── moods.ts        # 情绪、场景、活动数据
+│   ├── moods.ts            # 情绪、场景、活动数据
+│   ├── emotionKnowledge.ts # 情绪科普数据
+│   └── activityDatabase.ts # 活动数据库
 ├── types/              # TypeScript 类型定义
 │   └── index.ts
-├── test/               # 测试工具
-│   ├── auto-check.tsx  # 自动化检查
-│   └── logic-tests.ts  # 业务逻辑测试
 ├── App.tsx             # 主应用组件
 └── main.tsx            # 应用入口
 ```
 
 ## 🎯 核心功能逻辑
 
-### 1小时打卡限制
+### 打卡流程
 ```
-用户打卡 → 1小时内再次打卡 → 显示温和提醒弹窗
-                ↓
-        ┌───────┴───────┐
-        ↓               ↓
-    稍后再来         仍要记录
-        ↓               ↓
-    重置回主页      删除旧记录
-                    保存新记录
-                    3秒后回主页
+选择情绪 → 选择场景 → 活动推荐 → 完成打卡
+                                           ↓
+                              显示成功弹窗（5秒）
+                                           ↓
+                              自动返回主页，重置状态
 ```
 
-### 活动推荐算法
+### 1小时打卡限制
+同一场景1小时内重复打卡会显示提醒，用户可选择：
+- **稍后再来**：返回主页
+- **仍要记录**：删除旧记录，保存新记录
+
+### 活动推荐算法（Gross 情绪调节理论）
 1. 根据情绪筛选匹配的活动
 2. 根据场景进一步筛选
-3. 随机排序，返回前3个
-4. 无匹配时返回默认活动
+3. 确保覆盖前因聚焦、反应调节、注意力分配等策略
+4. 随机排序，返回3个活动
+
+### AI建议生成逻辑
+1. **预设优先**：从72条情绪导向建议库中智能选择
+2. **避免重复**：记录最近推荐，不重复推送
+3. **AI兜底**：每日8次额度，调用 DeepSeek API 生成
+4. **趋势感知**：根据最近3条记录分析情绪趋势
 
 ## 🧪 自动化测试
 
@@ -187,11 +241,27 @@ MoodFlowLogicTest.runLogicTests() // 运行业务逻辑测试
 - **组件设计**：原子化设计，单一职责
 - **性能优化**：useCallback/useMemo 合理使用
 
-## 🔒 隐私说明
+## 🔒 隐私与安全
 
-- 所有数据仅存储在浏览器本地
-- 不涉及任何服务器通信
+### 数据存储
+- 所有数据仅存储在浏览器 localStorage
+- 不涉及任何服务器通信（除 DeepSeek API 调用）
 - 无用户追踪或分析
+
+### API 安全
+- API Key 通过环境变量注入，不暴露在前端代码
+- 生产环境必须配置 `VITE_ENABLE_AI=true` 才能启用 AI 功能
+- 建议启用限额保护，避免 API 滥用
+
+### 环境变量安全
+```bash
+# 开发环境（本地）
+.env                    # 被 .gitignore 忽略，安全
+.env.local             # 本地覆盖，不提交
+
+# 生产环境（Vercel）
+在 Vercel Dashboard 中配置环境变量
+```
 
 ## 📄 开源协议
 
