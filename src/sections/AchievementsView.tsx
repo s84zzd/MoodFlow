@@ -111,11 +111,30 @@ export function AchievementsView({ stats }: AchievementsViewProps) {
   const unlockedAchievements = achievements.filter(a => a.condition(stats));
   const lockedAchievements = achievements.filter(a => !a.condition(stats));
 
-  // 计算下一个里程碑
-  const nextMilestone = milestones.find(m => stats.totalRecords < m.count) || milestones[milestones.length - 1];
-  const progress = stats.totalRecords > 0 
-    ? Math.min(100, (stats.totalRecords / nextMilestone.count) * 100)
-    : 0;
+  // 计算当前进度 - 基于已完成的里程碑
+  const currentMilestoneIndex = milestones.findIndex(m => stats.totalRecords < m.count);
+  const lastCompletedIndex = currentMilestoneIndex === -1 ? milestones.length - 1 : currentMilestoneIndex - 1;
+  
+  // 计算进度百分比
+  let progress = 0;
+  if (stats.totalRecords > 0) {
+    if (currentMilestoneIndex === -1) {
+      // 已完成所有里程碑
+      progress = 100;
+    } else if (currentMilestoneIndex === 0) {
+      // 还未完成第一个里程碑
+      progress = (stats.totalRecords / milestones[0].count) * 100;
+    } else {
+      // 已完成部分里程碑，计算到下一个的进度
+      const lastCompleted = milestones[lastCompletedIndex];
+      const nextMilestone = milestones[currentMilestoneIndex];
+      const range = nextMilestone.count - lastCompleted.count;
+      const current = stats.totalRecords - lastCompleted.count;
+      const segmentSize = 100 / (milestones.length - 1);
+      const currentSegmentProgress = (current / range) * segmentSize;
+      progress = (lastCompletedIndex * segmentSize) + currentSegmentProgress;
+    }
+  }
 
   return (
     <div className="space-y-6">
