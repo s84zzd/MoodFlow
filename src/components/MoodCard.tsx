@@ -21,11 +21,18 @@ const STORAGE_KEY_USERNAME = 'moodflow_card_username';
 
 export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [username, setUsername] = useState('');
   const [location, setLocation] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editUsername, setEditUsername] = useState('');
   const [editLocation, setEditLocation] = useState('');
+  
+  // 拖拽状态
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const dragStart = useRef({ x: 0, y: 0 });
+  const currentPosition = useRef({ x: 0, y: 0 });
 
   // 从localStorage加载用户名
   useEffect(() => {
@@ -102,15 +109,54 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
     alert('图片保存功能需要集成 html2canvas 库\n当前为演示版本');
   };
 
+  // 触摸/拖拽事件处理
+  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    setIsDragging(true);
+    dragStart.current = { x: clientX - currentPosition.current.x, y: clientY - currentPosition.current.y };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDragging) return;
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    const newX = clientX - dragStart.current.x;
+    const newY = clientY - dragStart.current.y;
+    
+    currentPosition.current = { x: newX, y: newY };
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  // 重置位置当卡片打开时
+  useEffect(() => {
+    if (isOpen) {
+      setPosition({ x: 0, y: 0 });
+      currentPosition.current = { x: 0, y: 0 };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm"
+      ref={containerRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-hidden"
       onClick={onClose}
     >
       <div 
         className="relative w-full max-w-[340px] sm:max-w-md"
+        style={{ 
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 关闭按钮 - 移至卡片内部，增大触摸区域 */}
@@ -200,10 +246,17 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           </div>
         ) : (
           <>
-            {/* 卡片主体 - 移动端优化尺寸 */}
+            {/* 卡片主体 - 移动端优化尺寸，支持拖拽 */}
             <div
               ref={cardRef}
-              className={`relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br ${getGradient(currentMood?.id)} max-h-[80vh] sm:max-h-none`}
+              className={`relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br ${getGradient(currentMood?.id)} max-h-[80vh] sm:max-h-none cursor-grab active:cursor-grabbing select-none`}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onMouseDown={handleTouchStart}
+              onMouseMove={handleTouchMove}
+              onMouseUp={handleTouchEnd}
+              onMouseLeave={handleTouchEnd}
             >
               {/* 装饰元素 */}
               <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
