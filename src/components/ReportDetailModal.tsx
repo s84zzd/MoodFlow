@@ -64,7 +64,7 @@ export function ReportDetailModal({
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-lg max-h-[85vh] bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-lg max-h-[90vh] sm:max-h-[85vh] bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-rose-400 to-pink-500 p-6 text-white">
           <button
@@ -86,7 +86,7 @@ export function ReportDetailModal({
         </div>
         
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="flex-1 p-6 overflow-y-auto min-h-0">
           {isGenerating ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="w-12 h-12 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin mb-4" />
@@ -160,7 +160,7 @@ export function ReportDetailModal({
         
         {/* Footer */}
         {!isGenerating && (
-          <div className="p-4 border-t border-gray-100 flex gap-3">
+          <div className="p-4 pb-6 sm:pb-4 border-t border-gray-100 flex gap-3 bg-white shrink-0">
             <button
               onClick={onRegenerate}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors"
