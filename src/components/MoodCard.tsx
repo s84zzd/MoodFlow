@@ -178,10 +178,27 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           };
           clonedElement.style.background = gradients[currentMoodId] || gradients.calm;
           
-          // 在克隆的元素上确保 emoji 字体正确
+          // 在克隆的元素上确保 emoji 字体正确，并修复布局
           const iconElements = clonedElement.querySelectorAll('[data-emoji]');
           iconElements.forEach(el => {
-            (el as HTMLElement).style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+            const htmlEl = el as HTMLElement;
+            htmlEl.style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+            htmlEl.style.fontSize = '2.25rem';
+            htmlEl.style.lineHeight = '1';
+            htmlEl.style.display = 'flex';
+            htmlEl.style.alignItems = 'center';
+            htmlEl.style.justifyContent = 'center';
+            htmlEl.style.overflow = 'hidden';
+            
+            // 确保子元素也正确居中
+            const span = htmlEl.querySelector('span');
+            if (span) {
+              span.style.display = 'flex';
+              span.style.alignItems = 'center';
+              span.style.justifyContent = 'center';
+              span.style.width = '100%';
+              span.style.height = '100%';
+            }
           });
         }
       });
@@ -393,11 +410,23 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                 {currentMood && (
                   <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
                     <div 
-                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 flex items-center justify-center text-3xl sm:text-5xl shadow-lg border border-white/30"
+                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex items-center justify-center overflow-hidden"
                       data-emoji="true"
-                      style={{ fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif' }}
+                      style={{ 
+                        fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
+                        fontSize: '2.25rem',
+                        lineHeight: '1',
+                      }}
                     >
-                      {currentMood.icon}
+                      <span style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        width: '100%',
+                        height: '100%',
+                      }}>
+                        {currentMood.icon}
+                      </span>
                     </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1 text-white drop-shadow-md">{currentMood.name}</p>
