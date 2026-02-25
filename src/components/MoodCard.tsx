@@ -151,17 +151,29 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       await document.fonts.ready;
       
       const canvas = await html2canvas(cardRef.current, {
-        scale: 3, // 提高清晰度
+        scale: 2, // 降低清晰度以提高兼容性
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
         logging: false,
-        foreignObjectRendering: false, // 禁用 foreignObject，使用更好的渲染方式
+        foreignObjectRendering: false,
+        removeContainer: true,
         onclone: (_clonedDoc, clonedElement) => {
-          // 在克隆的元素上确保 emoji 字体正确
+          // 在克隆的元素上确保 emoji 字体正确，并修复样式
           const iconElements = clonedElement.querySelectorAll('[data-emoji]');
           iconElements.forEach(el => {
-            (el as HTMLElement).style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+            const htmlEl = el as HTMLElement;
+            htmlEl.style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+            htmlEl.style.display = 'flex';
+            htmlEl.style.alignItems = 'center';
+            htmlEl.style.justifyContent = 'center';
+            // 确保子元素垂直居中
+            const span = htmlEl.querySelector('span');
+            if (span) {
+              span.style.display = 'inline-block';
+              span.style.lineHeight = '1';
+              span.style.verticalAlign = 'middle';
+            }
           });
         }
       });
@@ -373,11 +385,16 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                 {currentMood && (
                   <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
                     <div 
-                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 backdrop-blur-sm flex items-center justify-center text-3xl sm:text-5xl shadow-lg border border-white/30"
+                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center text-3xl sm:text-5xl shadow-lg border-2 border-white/50"
                       data-emoji="true"
-                      style={{ fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif' }}
+                      style={{ 
+                        fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
+                        background: 'rgba(255, 255, 255, 0.35)',
+                        backdropFilter: 'blur(4px)',
+                        WebkitBackdropFilter: 'blur(4px)',
+                      }}
                     >
-                      {currentMood.icon}
+                      <span className="leading-none">{currentMood.icon}</span>
                     </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1 text-white drop-shadow-md">{currentMood.name}</p>
