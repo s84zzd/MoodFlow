@@ -105,12 +105,19 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md">
-        {/* 关闭按钮 */}
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div 
+        className="relative w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 关闭按钮 - 移至卡片内部顶部 */}
         <button
           onClick={onClose}
-          className="absolute -top-12 right-0 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+          className="absolute -top-3 -right-3 z-10 w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white shadow-lg hover:bg-gray-700 transition-colors"
+          style={{ touchAction: 'manipulation' }}
         >
           <X className="w-5 h-5" />
         </button>
@@ -123,7 +130,8 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
               setEditLocation(location);
               setIsEditing(true);
             }}
-            className="absolute -top-12 right-14 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+            className="absolute -top-3 right-10 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
+            style={{ touchAction: 'manipulation' }}
           >
             <Edit2 className="w-4 h-4" />
           </button>
