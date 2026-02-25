@@ -25,29 +25,6 @@ const moodMapping: Record<string, string> = {
   '压力': 'stress',
 };
 
-// 反向映射（英文 -> 中文）
-const moodMappingReverse: Record<string, string> = {
-  'anxiety': '焦虑',
-  'melancholy': '忧郁',
-  'happy': '快乐',
-  'regret': '懊悔',
-  'calm': '平静',
-  'anticipation': '期待',
-  'content': '满足',
-  'doubt': '怀疑',
-  'stress': '压力',
-};
-
-// 场景映射
-const sceneMapping: Record<string, string> = {
-  '居家': 'at home',
-  '独处': 'alone',
-  '工作': 'at work',
-  '通勤': 'commuting',
-  '恋爱': 'in a relationship context',
-  '社交': 'in social situations',
-};
-
 interface AIRequestParams {
   currentMood: string;
   currentScene: string;

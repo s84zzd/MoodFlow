@@ -352,7 +352,6 @@ const activityDatabase: Record<string, Record<string, Array<{ title: string; des
 // 生成完整的活动列表
 export function generateFullActivityDatabase(): CustomActivity[] {
   const activities: CustomActivity[] = [];
-  let idCounter = 1;
 
   moods.forEach((mood) => {
     scenes.forEach((scene) => {
