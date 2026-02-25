@@ -16,6 +16,7 @@ export interface MoodRecord {
 
 export interface MoodStats {
   totalRecords: number;
+  totalDays: number;
   moodDistribution: Record<string, number>;
   sceneDistribution: Record<string, number>;
   weeklyTrend: { day: string; count: number; dominantMood: string }[];
@@ -234,8 +235,16 @@ export function useMoodHistory() {
       ? new Date(lastRecord.timestamp).toLocaleDateString('zh-CN')
       : null;
 
+    // 计算打卡天数（去重日期）
+    const uniqueDates = new Set(records.map(r => {
+      const date = new Date(r.timestamp);
+      return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    }));
+    const totalDays = uniqueDates.size;
+
     return {
       totalRecords: records.length,
+      totalDays,
       moodDistribution,
       sceneDistribution,
       weeklyTrend,

@@ -111,25 +111,28 @@ export function AchievementsView({ stats }: AchievementsViewProps) {
   const unlockedAchievements = achievements.filter(a => a.condition(stats));
   const lockedAchievements = achievements.filter(a => !a.condition(stats));
 
+  // 使用 totalDays（打卡天数）而不是 totalRecords（记录总数）
+  const totalDays = stats.totalDays || 0;
+  
   // 计算当前进度 - 基于已完成的里程碑
-  const currentMilestoneIndex = milestones.findIndex(m => stats.totalRecords < m.count);
+  const currentMilestoneIndex = milestones.findIndex(m => totalDays < m.count);
   const lastCompletedIndex = currentMilestoneIndex === -1 ? milestones.length - 1 : currentMilestoneIndex - 1;
   
   // 计算进度百分比
   let progress = 0;
-  if (stats.totalRecords > 0) {
+  if (totalDays > 0) {
     if (currentMilestoneIndex === -1) {
       // 已完成所有里程碑
       progress = 100;
     } else if (currentMilestoneIndex === 0) {
       // 还未完成第一个里程碑
-      progress = (stats.totalRecords / milestones[0].count) * 100;
+      progress = (totalDays / milestones[0].count) * 100;
     } else {
       // 已完成部分里程碑，计算到下一个的进度
       const lastCompleted = milestones[lastCompletedIndex];
       const nextMilestone = milestones[currentMilestoneIndex];
       const range = nextMilestone.count - lastCompleted.count;
-      const current = stats.totalRecords - lastCompleted.count;
+      const current = totalDays - lastCompleted.count;
       const segmentSize = 100 / (milestones.length - 1);
       const currentSegmentProgress = (current / range) * segmentSize;
       progress = (lastCompletedIndex * segmentSize) + currentSegmentProgress;
@@ -186,7 +189,7 @@ export function AchievementsView({ stats }: AchievementsViewProps) {
           {/* 里程碑点 */}
           <div className="relative flex justify-between">
             {milestones.map((milestone, index) => {
-              const isReached = stats.totalRecords >= milestone.count;
+              const isReached = totalDays >= milestone.count;
               return (
                 <div key={index} className="flex flex-col items-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mb-2 z-10 ${
