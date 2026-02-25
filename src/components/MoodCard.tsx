@@ -147,12 +147,23 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       cardRef.current.style.transform = 'none';
       cardRef.current.style.cursor = 'default';
       
+      // 等待字体和 emoji 渲染完成
+      await document.fonts.ready;
+      
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2, // 高清截图
+        scale: 3, // 提高清晰度
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
         logging: false,
+        foreignObjectRendering: false, // 禁用 foreignObject，使用更好的渲染方式
+        onclone: (_clonedDoc, clonedElement) => {
+          // 在克隆的元素上确保 emoji 字体正确
+          const iconElements = clonedElement.querySelectorAll('[data-emoji]');
+          iconElements.forEach(el => {
+            (el as HTMLElement).style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+          });
+        }
       });
       
       // 恢复样式
@@ -361,7 +372,11 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                 {/* 情绪展示 */}
                 {currentMood && (
                   <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
-                    <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 backdrop-blur-sm flex items-center justify-center text-3xl sm:text-5xl shadow-lg border border-white/30">
+                    <div 
+                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 backdrop-blur-sm flex items-center justify-center text-3xl sm:text-5xl shadow-lg border border-white/30"
+                      data-emoji="true"
+                      style={{ fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif' }}
+                    >
                       {currentMood.icon}
                     </div>
                     <div>
