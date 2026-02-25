@@ -113,27 +113,35 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
         className="relative w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 关闭按钮 - 移至卡片内部顶部 */}
+        {/* 关闭按钮 - 移至卡片内部，增大触摸区域 */}
         <button
-          onClick={onClose}
-          className="absolute -top-3 -right-3 z-10 w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white shadow-lg hover:bg-gray-700 transition-colors"
-          style={{ touchAction: 'manipulation' }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
+          className="absolute -top-3 -right-3 z-20 w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-white shadow-lg hover:bg-gray-700 active:bg-gray-900 transition-colors"
+          style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+          aria-label="关闭"
         >
-          <X className="w-5 h-5" />
+          <X className="w-6 h-6 pointer-events-none" />
         </button>
 
         {/* 编辑按钮 - 只在显示卡片时出现 */}
         {!isEditing && (
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               setEditUsername(username);
               setEditLocation(location);
               setIsEditing(true);
             }}
-            className="absolute -top-3 right-10 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
-            style={{ touchAction: 'manipulation' }}
+            className="absolute -top-3 right-12 z-20 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            aria-label="编辑"
           >
-            <Edit2 className="w-4 h-4" />
+            <Edit2 className="w-5 h-5 pointer-events-none" />
           </button>
         )}
 
