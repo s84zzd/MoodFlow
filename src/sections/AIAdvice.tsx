@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, Lightbulb, Heart, Brain, Loader2, RefreshCw } from 'lucide-react';
+import { Sparkles, Lightbulb, Heart, Brain, Loader2, RefreshCw, Zap } from 'lucide-react';
 import type { Mood } from '@/types';
 import type { MoodStats, MoodRecord } from '@/hooks/useMoodHistory';
 import type { AIAdvice } from '@/hooks/useAIAdvice';
@@ -9,7 +9,9 @@ interface AIAdviceProps {
   stats: MoodStats;
   recentRecords: MoodRecord[];
   isActive: boolean;
-  onGenerateAdvice: (mood?: Mood | null, stats?: MoodStats, records?: MoodRecord[]) => Promise<AIAdvice>;
+  onGenerateLocalAdvice: (mood?: Mood | null, records?: MoodRecord[], excludeId?: string) => Promise<AIAdvice>;
+  onGenerateAIAdvice: (mood?: Mood | null, records?: MoodRecord[]) => Promise<AIAdvice | null>;
+  getRemainingAIAdviceCount: () => number;
   getPersonalizedInsights: (stats: MoodStats, records?: MoodRecord[]) => string[];
   isGenerating: boolean;
 }
@@ -19,13 +21,16 @@ export function AIAdviceSection({
   stats,
   recentRecords,
   isActive,
-  onGenerateAdvice,
+  onGenerateLocalAdvice,
+  onGenerateAIAdvice,
+  getRemainingAIAdviceCount,
   getPersonalizedInsights,
   isGenerating,
 }: AIAdviceProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [advice, setAdvice] = useState<AIAdvice | null>(null);
   const [insights, setInsights] = useState<string[]>([]);
+  const [remainingAIAdvice, setRemainingAIAdvice] = useState(8);
 
   useEffect(() => {
     if (isActive) {
@@ -36,17 +41,58 @@ export function AIAdviceSection({
     }
   }, [isActive]);
 
-  // Generate advice on first load
+  // Generate local advice on first load
   useEffect(() => {
     if (isActive && !advice && !isGenerating) {
-      handleGenerateAdvice();
+      handleGenerateLocalAdvice();
     }
   }, [isActive]);
 
-  const handleGenerateAdvice = async () => {
-    const newAdvice = await onGenerateAdvice(currentMood, stats, recentRecords);
+  // Update remaining AI advice count
+  useEffect(() => {
+    setRemainingAIAdvice(getRemainingAIAdviceCount());
+  }, [advice, getRemainingAIAdviceCount]);
+
+  const handleGenerateLocalAdvice = async () => {
+    // 传递当前建议的ID，以便获取不同的建议
+    const currentAdviceId = advice?.id;
+    const newAdvice = await onGenerateLocalAdvice(currentMood, recentRecords, currentAdviceId);
     setAdvice(newAdvice);
     setInsights(getPersonalizedInsights(stats, recentRecords));
+  };
+
+  const handleGenerateAIAdvice = async () => {
+    // 如果 currentMood 为 null，尝试从 recentRecords 中获取
+    let moodForAI = currentMood;
+    if (!moodForAI && recentRecords.length > 0) {
+      const latestRecord = recentRecords[0];
+      moodForAI = {
+        id: latestRecord.moodId,
+        name: latestRecord.moodName,
+        color: latestRecord.moodColor,
+        bgColor: '',
+        ringColor: '',
+        icon: latestRecord.moodIcon,
+        description: '',
+      };
+    }
+    
+    if (!moodForAI) {
+      alert('请先选择或记录一个情绪');
+      return;
+    }
+    
+    try {
+      const aiAdvice = await onGenerateAIAdvice(moodForAI, recentRecords);
+      if (aiAdvice) {
+        setAdvice(aiAdvice);
+        setInsights(getPersonalizedInsights(stats, recentRecords));
+      } else {
+        alert('AI 生成失败，请稍后重试');
+      }
+    } catch (error) {
+      alert('AI 生成出错，请稍后重试');
+    }
   };
 
   if (!isActive) return null;
@@ -138,12 +184,59 @@ export function AIAdviceSection({
               <p className="text-gray-700 leading-relaxed">{advice.content}</p>
             </div>
 
+            {/* AI生成提示 */}
+            {!advice.isAIGenerated && remainingAIAdvice > 0 && (
+              <div className="mb-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm font-medium text-amber-700">AI 智能生成</span>
+                </div>
+                <p className="text-xs text-amber-600 mb-3">
+                  当前为系统预设建议。使用 AI 生成可获得更个性化的深度分析。
+                </p>
+                <button
+                  onClick={handleGenerateAIAdvice}
+                  disabled={isGenerating}
+                  className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-sm font-medium hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      AI 生成中...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      使用 AI 生成（今日剩余 {remainingAIAdvice} 次）
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* 额度用完提示 */}
+            {!advice.isAIGenerated && remainingAIAdvice === 0 && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-xl text-center">
+                <p className="text-xs text-gray-500">
+                  今日 AI 生成额度已用完，明天再来吧～
+                </p>
+              </div>
+            )}
+
+            {/* AI生成标记 */}
+            {advice.isAIGenerated && (
+              <div className="mb-4 flex items-center justify-center gap-2 text-purple-500">
+                <Sparkles className="w-4 h-4" />
+                <span className="text-sm">AI 智能生成</span>
+              </div>
+            )}
+
             <button
-              onClick={handleGenerateAdvice}
+              onClick={handleGenerateLocalAdvice}
               className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-400 to-pink-500 text-white font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
-              获取新建议
+              换一条建议
             </button>
           </div>
         ) : null}

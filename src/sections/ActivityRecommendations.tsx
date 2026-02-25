@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Clock, Sparkles, Heart, CheckCircle2, Trophy, RotateCcw } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Clock, Sparkles, Heart, CheckCircle2, Trophy, RotateCcw, Shuffle } from 'lucide-react';
 import type { Mood, Scene } from '@/types';
 import type { CustomActivity } from '@/hooks/useCustomActivities';
 
@@ -24,6 +24,18 @@ export function ActivityRecommendations({
 }: ActivityRecommendationsProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [completedActivities, setCompletedActivities] = useState<Set<string>>(new Set());
+  const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
+
+  // 当活动列表变化时，重置索引
+  useEffect(() => {
+    setCurrentActivityIndex(0);
+  }, [activities]);
+
+  // 换一条活动
+  const handleShuffleActivity = useCallback(() => {
+    if (activities.length <= 1) return;
+    setCurrentActivityIndex((prev) => (prev + 1) % activities.length);
+  }, [activities.length]);
 
   useEffect(() => {
     if (isActive) {
@@ -87,17 +99,16 @@ export function ActivityRecommendations({
         </div>
       )}
 
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto w-full">
-        {activities.map((activity, index) => (
+      <div className="relative z-10 max-w-md mx-auto w-full">
+        {activities.length > 0 && (() => {
+          const activity = activities[currentActivityIndex];
+          return (
           <div
             key={activity.id}
             className={`activity-card group transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
             }`}
-            style={{ 
-              transitionDelay: `${400 + index * 150}ms`,
-              marginTop: index === 1 ? '40px' : '0',
-            }}
+            style={{ transitionDelay: '400ms' }}
           >
             <div
               className={`
@@ -130,7 +141,7 @@ export function ActivityRecommendations({
                       <Heart className={`w-5 h-5 ${activity.color}`} />
                     </div>
                     <span className={`text-sm font-medium ${activity.color}`}>
-                      推荐 {index + 1}
+                      推荐活动
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-gray-500 text-sm">
@@ -174,11 +185,25 @@ export function ActivityRecommendations({
               <div className="absolute inset-0 bg-gradient-to-t from-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </div>
           </div>
-        ))}
+          );
+        })()}
       </div>
 
+      {/* Shuffle button */}
+      {!isComplete && activities.length > 1 && (
+        <div className="mt-8 text-center">
+          <button
+            onClick={handleShuffleActivity}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/80 backdrop-blur-sm text-gray-600 font-medium hover:bg-white hover:shadow-md transition-all duration-300"
+          >
+            <Shuffle className="w-4 h-4" />
+            换一条
+          </button>
+        </div>
+      )}
+
       {/* Action buttons */}
-      <div className="mt-16 text-center space-y-4">
+      <div className="mt-12 text-center space-y-4">
         {!isComplete ? (
           <button
             onClick={onComplete}
@@ -198,7 +223,7 @@ export function ActivityRecommendations({
         )}
         <p className="text-sm text-gray-400">
           {isComplete 
-            ? `已完成 ${completedActivities.size}/${activities.length} 个推荐活动` 
+            ? `已完成 ${completedActivities.size} 个推荐活动` 
             : '完成打卡后，记录将保存到你的情绪历史中'}
         </p>
       </div>

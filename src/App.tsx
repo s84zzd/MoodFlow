@@ -5,12 +5,13 @@ import { ActivityRecommendations } from '@/sections/ActivityRecommendations';
 import { SocialShare } from '@/sections/SocialShare';
 import { AIAdviceSection } from '@/sections/AIAdvice';
 import { Profile } from '@/sections/Profile';
-import { GentleReminder } from '@/components/GentleReminder';
+import { CheckInCompleteModal } from '@/components/CheckInCompleteModal';
 import { useMoodHistory } from '@/hooks/useMoodHistory';
 import { useCustomActivities } from '@/hooks/useCustomActivities';
 import { useAIAdvice } from '@/hooks/useAIAdvice';
+import { TestDataButton } from '@/components/TestDataButton';
+import { DebugReportCount } from '@/components/DebugReportCount';
 import type { Mood, Scene } from '@/types';
-import type { MoodRecord } from '@/hooks/useMoodHistory';
 import { Heart, Share2, Sparkles, Home, BarChart3, User } from 'lucide-react';
 import './App.css';
 
@@ -25,17 +26,11 @@ function App() {
   const [showActivities, setShowActivities] = useState(false);
   const [checkInComplete, setCheckInComplete] = useState(false);
   
-  // Gentle reminder state
-  const [showReminder, setShowReminder] = useState(false);
-  const [reminderData, setReminderData] = useState<{
-    remainingMinutes: number;
-    lastRecord: MoodRecord;
-  } | null>(null);
-  
   const progressRef = useRef<HTMLDivElement>(null);
 
   // Custom hooks
   const {
+    records,
     addRecord: addMoodRecord,
     canCheckIn,
     exportAsCSV,
@@ -49,7 +44,9 @@ function App() {
 
   const {
     isGenerating: isGeneratingAdvice,
-    generateAdvice,
+    generateLocalAdvice,
+    generateAIAdvice,
+    getRemainingAIAdviceCount,
     getPersonalizedInsights,
   } = useAIAdvice();
 
@@ -81,23 +78,16 @@ function App() {
 
   // Handle scene selection
   const handleSceneSelect = useCallback((scene: Scene) => {
-    // 提前检查1小时限制
+    // 检查今日打卡次数（用于提示，不限制）
     const checkResult = canCheckIn(scene);
     
-    if (!checkResult.allowed && checkResult.remainingMinutes && checkResult.lastRecord) {
-      // 如果同一场景1小时内已打卡，显示温和提醒
-      setReminderData({
-        remainingMinutes: checkResult.remainingMinutes,
-        lastRecord: checkResult.lastRecord,
-      });
-      setShowReminder(true);
-      // 仍然设置场景，但让用户决定是否继续
-      setSelectedScene(scene);
-      setShowActivities(true);
-    } else {
-      // 正常流程
-      setSelectedScene(scene);
-      setShowActivities(true);
+    // 正常流程：直接设置场景并显示活动
+    setSelectedScene(scene);
+    setShowActivities(true);
+    
+    // 如果今天打卡次数较多，可以在控制台记录（用于调试）
+    if (checkResult.dailyCount && checkResult.dailyCount >= 6) {
+      console.log(`今日已打卡 ${checkResult.dailyCount} 次，还可打卡 ${8 - checkResult.dailyCount} 次`);
     }
     
     setTimeout(() => {
@@ -123,33 +113,30 @@ function App() {
   const handleCompleteCheckIn = useCallback(() => {
     if (!selectedMood) return;
 
-    // 直接完成打卡（1小时检查已提前到场景选择时）
+    // 直接完成打卡（每天最多保留8条记录）
     const result = addMoodRecord(selectedMood, selectedScene);
     if (result.success) {
       setCheckInComplete(true);
     }
   }, [selectedMood, selectedScene, addMoodRecord]);
 
-  // Force complete check-in (skip 1-hour check)
-  const handleForceCompleteCheckIn = useCallback(() => {
-    if (selectedMood) {
-      const result = addMoodRecord(selectedMood, selectedScene, undefined, true);
-      if (result.success) {
-        setCheckInComplete(true);
-        setShowReminder(false);
-        
-        // 延迟3秒后自动回到主页，让用户看到打卡完成的鼓励用语
-        setTimeout(() => {
-          handleReset();
-        }, 3000);
-      }
-    }
-  }, [selectedMood, selectedScene, addMoodRecord, handleReset]);
+  // 处理打卡完成弹窗关闭 - 自动重置并返回主页
+  const handleCheckInCompleteClose = useCallback(() => {
+    setCheckInComplete(false);
+    // 重置打卡状态
+    setSelectedMood(null);
+    setSelectedScene(null);
+    setShowScene(false);
+    setShowActivities(false);
+    // 滚动到顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   // Get stats and activities
   const moodStats = getMoodStats();
   const recentRecords = getRecentRecords(10);
-  const currentActivities = selectedMood ? getActivitiesForMood(selectedMood.id, selectedScene?.id, 3) : [];
+  // 获取活动：优先匹配同情绪+同场景，不足时补充同情绪其他场景的活动
+  const currentActivities = selectedMood ? getActivitiesForMood(selectedMood.id, selectedScene?.id, 10, false) : [];
 
   // Navigation component
   const Navigation = () => (
@@ -301,7 +288,9 @@ function App() {
               stats={moodStats}
               recentRecords={recentRecords}
               isActive={true}
-              onGenerateAdvice={generateAdvice}
+              onGenerateLocalAdvice={generateLocalAdvice}
+              onGenerateAIAdvice={generateAIAdvice}
+              getRemainingAIAdviceCount={getRemainingAIAdviceCount}
               getPersonalizedInsights={getPersonalizedInsights}
               isGenerating={isGeneratingAdvice}
             />
@@ -309,7 +298,7 @@ function App() {
         ) : (
           <Profile
             stats={moodStats}
-            records={recentRecords}
+            records={records}
             isActive={true}
             onExportCSV={exportAsCSV}
           />
@@ -319,6 +308,19 @@ function App() {
       {/* Bottom Navigation */}
       <Navigation />
 
+      {/* 打卡完成弹窗 */}
+      <CheckInCompleteModal
+        isOpen={checkInComplete}
+        onClose={handleCheckInCompleteClose}
+        moodName={selectedMood?.name}
+      />
+
+      {/* Test Data Button (Dev only) */}
+      <TestDataButton />
+
+      {/* Debug Report Count (Dev only) */}
+      <DebugReportCount />
+
       {/* Floating decorative elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-1/4 left-10 w-2 h-2 bg-rose-300 rounded-full animate-float opacity-40" />
@@ -327,20 +329,6 @@ function App() {
         <div className="absolute top-2/3 right-1/3 w-2 h-2 bg-emerald-300 rounded-full animate-float animation-delay-900 opacity-40" />
       </div>
 
-      {/* Gentle Reminder Modal */}
-      {reminderData && (
-        <GentleReminder
-          isOpen={showReminder}
-          onClose={() => {
-            setShowReminder(false);
-            // 用户选择"稍后再来"，重置到主页
-            handleReset();
-          }}
-          onContinue={handleForceCompleteCheckIn}
-          remainingMinutes={reminderData.remainingMinutes}
-          lastRecord={reminderData.lastRecord}
-        />
-      )}
     </div>
   );
 }

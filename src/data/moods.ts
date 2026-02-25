@@ -617,9 +617,9 @@ export const inspirationalQuotes = [
   { text: '情绪是内心的天气，总会雨过天晴', author: 'MoodFlow' },
 ];
 
-// 按情绪分类的心语库
+// 按情绪分类的心语库 - 包含短句和长句（适合卡片）
 export const moodQuotes: Record<string, { text: string; author: string }[]> = {
-  // 焦虑 - 8条
+  // 焦虑 - 包含短句和长句（适合卡片）
   anxiety: [
     { text: '焦虑是大脑在试图保护你，试着对它说声谢谢', author: 'MoodFlow' },
     { text: '深呼吸，此刻你是安全的，焦虑会过去', author: 'MoodFlow' },
@@ -629,8 +629,12 @@ export const moodQuotes: Record<string, { text: string; author: string }[]> = {
     { text: '慢慢来，你不需要一次性解决所有问题', author: 'MoodFlow' },
     { text: '允许自己暂停一下，休息不是放弃', author: 'MoodFlow' },
     { text: '你已经做得很好了，给自己一点信任', author: 'MoodFlow' },
+    // 长句 - 适合卡片
+    { text: '焦虑是大脑的预警系统，它不是在折磨你，而是在试图保护你。试着对它说声谢谢，然后告诉它："我知道你在保护我，但我现在很安全。"', author: 'MoodFlow' },
+    { text: '当你感到焦虑时，试着用"5-4-3-2-1"技巧回到当下：说出5样你能看到的、4样听到的、3样触摸到的、2样闻到的、1样尝到的。焦虑只存在于对未来的想象中，而当下是安全的。', author: 'MoodFlow' },
+    { text: '研究表明，人们担心的事情中，有85%从未发生，剩下的15%中，79%的结果比预期的要好。所以，你的担心大概率不会成真，放轻松，相信自己能应对一切。', author: 'MoodFlow' },
   ],
-  // 忧郁 - 8条
+  // 忧郁 - 包含短句和长句
   melancholy: [
     { text: '悲伤是心灵的雨季，雨过总会天晴', author: 'MoodFlow' },
     { text: '允许自己难过，这是治愈的一部分', author: 'MoodFlow' },
@@ -640,8 +644,12 @@ export const moodQuotes: Record<string, { text: string; author: string }[]> = {
     { text: '给自己一个拥抱，你值得被温柔以待', author: 'MoodFlow' },
     { text: '眼泪是心灵的洗礼，哭出来会好一些', author: 'MoodFlow' },
     { text: '这段路很难，但你不是一个人在走', author: 'MoodFlow' },
+    // 长句
+    { text: '忧郁不是软弱，而是深度感受的证明。它说明你有一颗敏感而细腻的心，能够体察到生活的复杂和细微。这份深度是一份礼物，尽管有时会感到沉重。允许自己感受，是治愈的开始。', author: 'MoodFlow' },
+    { text: '想象你最好的朋友正在经历这种忧郁，你会对TA说什么？你会告诉TA"没关系，我在这里"，你会给TA一个拥抱，你会陪TA度过这段时光。现在，请用同样温柔的话语和陪伴对待自己。', author: 'MoodFlow' },
+    { text: '即使在最忧郁的时刻，生活中也有微小的美好：一杯热茶的温度、窗外的阳光、喜欢的歌曲、陌生人的微笑。试着留意这些微光，它们是穿透云层的希望，提醒你：阴霾终将散去。', author: 'MoodFlow' },
   ],
-  // 快乐 - 8条
+  // 快乐 - 包含短句和长句
   happy: [
     { text: '享受这份快乐，这是你应得的', author: 'MoodFlow' },
     { text: '你的笑容是这个世界的美好', author: 'MoodFlow' },
@@ -651,8 +659,12 @@ export const moodQuotes: Record<string, { text: string; author: string }[]> = {
     { text: '开心的时候，时间就让它慢下来', author: 'MoodFlow' },
     { text: '你的快乐是给自己最好的礼物', author: 'MoodFlow' },
     { text: '今天的好心情，是明天的好兆头', author: 'MoodFlow' },
+    // 长句
+    { text: '快乐时，试着"品味"这份感受：闭上眼睛，深呼吸，让快乐的感受在身体中停留和扩散。研究表明， savoring 能延长积极情绪的持续时间30-50%，让这份美好在心中多停留一会儿。', author: 'MoodFlow' },
+    { text: '你的快乐不仅影响你自己，也会影响周围的人。分享你的快乐，无论是通过微笑、赞美还是帮助他人，都会让快乐倍增。在这个充满挑战的世界里，你的快乐是送给世界的礼物。', author: 'MoodFlow' },
+    { text: '创建一个"快乐银行"，每天存入至少一件让你开心的小事。当情绪低落时，你可以从这个"银行"中提取快乐回忆。记住：约50%的快乐来自基因，10%来自环境，40%来自我们的选择和习惯。', author: 'MoodFlow' },
   ],
-  // 懊悔 - 8条
+  // 懊悔 - 包含短句和长句
   regret: [
     { text: '过去的已经过去，你已经在成长', author: 'MoodFlow' },
     { text: '原谅自己，那时你已经尽力了', author: 'MoodFlow' },
@@ -662,8 +674,12 @@ export const moodQuotes: Record<string, { text: string; author: string }[]> = {
     { text: '放下过去，才能拥抱更好的未来', author: 'MoodFlow' },
     { text: '你值得被原谅，尤其是被自己', author: 'MoodFlow' },
     { text: '今天的你，比昨天更智慧', author: 'MoodFlow' },
+    // 长句
+    { text: '你感到懊悔，是因为现在的你比过去更成熟、更有智慧。懊悔不是失败的证明，而是成长的标志。试着对自己说："那时的我已经尽力了，带着当时的认知和资源，我做了最好的选择。"', author: 'MoodFlow' },
+    { text: '每一次懊悔都是一次学习的机会。问自己："如果重来一次，我会怎么做？"然后把答案写下来，这是给未来的自己的礼物。把懊悔转化为智慧，让它成为成长的养分。', author: 'MoodFlow' },
+    { text: '想象10年后的自己回看现在，会对今天的你说什么？通常我们会发现，现在纠结的事，在时间的长河中并没有那么重要。过去不能改变，但现在可以。每一次呼吸都是新的开始。', author: 'MoodFlow' },
   ],
-  // 平静 - 8条
+  // 平静 - 包含短句和长句
   calm: [
     { text: '享受这份宁静，这是你内心的港湾', author: 'MoodFlow' },
     { text: '平静是最珍贵的状态，好好珍惜', author: 'MoodFlow' },
@@ -673,8 +689,12 @@ export const moodQuotes: Record<string, { text: string; author: string }[]> = {
     { text: '你找到了属于自己的节奏', author: 'MoodFlow' },
     { text: '平静不是没有波澜，而是学会航行', author: 'MoodFlow' },
     { text: '这份宁静，是你给自己的温柔', author: 'MoodFlow' },
+    // 长句
+    { text: '在这个快节奏的世界里，平静是稀缺而宝贵的。此刻的你正处在一个难得的状态，好好享受这份宁静，让它滋养你的心灵。试着对自己说："我允许自己享受这份宁静，我不需要做任何事，只需要存在。"', author: 'MoodFlow' },
+    { text: '平静不是软弱或消极，而是一种强大的力量。在平静中，你能看得更清楚、想得更深入、做出更明智的决定。就像台风眼，外界再混乱，中心依然宁静。这是你的超能力。', author: 'MoodFlow' },
+    { text: '注意是什么让你感到平静——是环境、活动还是某种想法？这些是你的"平静锚点"，可以在未来情绪波动时帮助你找回平静。把这份平静储存在心里，像充电一样，当未来遇到风浪时，你可以回想这一刻。', author: 'MoodFlow' },
   ],
-  // 期待 - 8条
+  // 期待 - 包含短句和长句
   anticipation: [
     { text: '期待让生活充满色彩', author: 'MoodFlow' },
     { text: '美好的事情正在向你走来', author: 'MoodFlow' },
@@ -684,8 +704,12 @@ export const moodQuotes: Record<string, { text: string; author: string }[]> = {
     { text: '带着希望前行，路会越走越宽', author: 'MoodFlow' },
     { text: '期待的过程，本身就是一种幸福', author: 'MoodFlow' },
     { text: '相信美好的事情即将发生', author: 'MoodFlow' },
+    // 长句
+    { text: '研究发现，期待某件事的过程往往比事情本身更让人快乐。你正处在这个美好的阶段，好好享受这份充满可能性的感受。深呼吸，细细品味这份美好的不确定性，它是冒险的开始。', author: 'MoodFlow' },
+    { text: '期待带来动力，但也可能带来焦虑。觉察你的期待是否变成了执念。健康的期待是开放的："我希望它发生，但我也能接受其他可能。"这样无论结果如何，你都不会太失望，反而能享受过程。', author: 'MoodFlow' },
+    { text: '好东西值得等待。期待教会我们耐心，锻炼我们延迟满足的能力。把期待看作一场马拉松而不是短跑，每一次等待都是在锻炼你的耐心肌肉。相信时间的力量，美好的事情正在路上。', author: 'MoodFlow' },
   ],
-  // 满足 - 8条
+  // 满足 - 包含短句和长句
   content: [
     { text: '知足是幸福的起点', author: 'MoodFlow' },
     { text: '你拥有的一切，都值得感恩', author: 'MoodFlow' },
@@ -695,8 +719,12 @@ export const moodQuotes: Record<string, { text: string; author: string }[]> = {
     { text: '你已经拥有很多，珍惜当下', author: 'MoodFlow' },
     { text: '满足不是停止，而是懂得欣赏', author: 'MoodFlow' },
     { text: '内心的富足，胜过一切', author: 'MoodFlow' },
+    // 长句
+    { text: '在一个不断追求"更多"的时代，能感到满足是一种智慧。你懂得欣赏已经拥有的，这让你比大多数人更富有。满足告诉你："我已经足够了。"这不是停止成长，而是不再被匮乏感驱使。', author: 'MoodFlow' },
+    { text: '满足常常伴随着感恩。留意你此刻感激的事物，无论大小。感恩能重塑大脑，让你更容易感受到满足和幸福。每天记录3件让你感到满足的事，持续的感恩练习会带来持久的改变。', author: 'MoodFlow' },
+    { text: '广告和社交媒体总在告诉我们"还不够"，但满足是对这种声音的回应："我已经拥有的就很好。"这是一种勇气。满足感会传染，分享你对生活的满意，提醒别人：幸福不需要等到"某一天"，它可以是现在。', author: 'MoodFlow' },
   ],
-  // 怀疑 - 8条
+  // 怀疑 - 包含短句和长句
   doubt: [
     { text: '不确定是正常的，答案会浮现', author: 'MoodFlow' },
     { text: '怀疑是思考的开始，不是终点', author: 'MoodFlow' },
@@ -706,8 +734,12 @@ export const moodQuotes: Record<string, { text: string; author: string }[]> = {
     { text: '怀疑让你更谨慎，这是优点', author: 'MoodFlow' },
     { text: '不必急于确定，给自己时间', author: 'MoodFlow' },
     { text: '困惑时，信息会自然清晰', author: 'MoodFlow' },
+    // 长句
+    { text: '怀疑是理性的开始，是批判性思维的起点。你不盲目相信，而是认真思考，这是理性和成熟的表现。关键是不要让怀疑变成自我否定或决策瘫痪。设定一个"决定截止时间"，告诉自己："我会在今晚8点前做出选择，然后执行。"', author: 'MoodFlow' },
+    { text: '如果怀疑某个选择，先小规模测试。想换工作？先兼职试试；想学新技能？先上一节体验课；想搬家？先去住一周。用实践代替空想，数据比想象更可靠。小步验证能降低风险，同时给你真实反馈。', author: 'MoodFlow' },
+    { text: '问自己："我的怀疑是基于事实还是恐惧？"事实需要分析，恐惧需要勇气。识别它们的区别，然后对症下药。除了理性分析，也要听听内心的声音。有时候，直觉会比头脑更快地知道答案。给直觉一个发言的机会。', author: 'MoodFlow' },
   ],
-  // 压力 - 8条
+  // 压力 - 包含短句和长句
   stress: [
     { text: '压力是成长的催化剂，适度就好', author: 'MoodFlow' },
     { text: '你不需要一直坚强，允许自己脆弱', author: 'MoodFlow' },
@@ -717,5 +749,9 @@ export const moodQuotes: Record<string, { text: string; author: string }[]> = {
     { text: '记得给自己留白的时间', author: 'MoodFlow' },
     { text: '你已经扛过很多，这次也可以', author: 'MoodFlow' },
     { text: '放下完美主义，完成比完美重要', author: 'MoodFlow' },
+    // 长句
+    { text: '压力说明你正在挑战自己的舒适区，这是成长的必经之路。适度的压力能提高专注力和表现力（耶克斯-多德森定律），它是你进步的动力。关键是找到平衡点：足够的压力让你保持专注，但不过度压垮你。', author: 'MoodFlow' },
+    { text: '把大的压力拆解成小的部分：哪些是你能控制的？哪些不能？专注于能控制的部分，对不能控制的部分学会放手。番茄工作法很有用：25分钟专注一个任务，然后休息5分钟。小步前进比大步停滞更有效。', author: 'MoodFlow' },
+    { text: '压力会消耗身体能量，确保基本的自我照顾：充足的睡眠、健康的饮食、适度的运动。身体状态好，应对压力的能力会更强。你不需要独自承担所有压力，向可信赖的人倾诉，寻求帮助不是软弱，而是智慧。', author: 'MoodFlow' },
   ],
 };

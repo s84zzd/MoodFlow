@@ -25,6 +25,8 @@ export interface MoodStats {
 }
 
 const STORAGE_KEY = 'moodflow_history';
+const MAX_DAILY_RECORDS = 8; // 每天最多保留8条记录
+const ENABLE_CHECKIN_LIMIT = import.meta.env.VITE_ENABLE_CHECKIN_LIMIT === 'true';
 
 export function useMoodHistory() {
   const [records, setRecords] = useState<MoodRecord[]>([]);
@@ -51,33 +53,30 @@ export function useMoodHistory() {
     }
   }, [records, isLoaded]);
 
-  // Check if user can check in (any record within 1 hour)
-  const canCheckIn = useCallback((_scene?: Scene | null): { allowed: boolean; remainingMinutes?: number; lastRecord?: MoodRecord } => {
+  // Check if user can check in (no longer restricted by time, only by daily limit)
+  const canCheckIn = useCallback((_scene?: Scene | null): { allowed: boolean; remainingMinutes?: number; lastRecord?: MoodRecord; dailyCount?: number } => {
     const now = Date.now();
-    const oneHour = 60 * 60 * 1000;
-
-    // Find the most recent record (regardless of scene or mood)
-    const lastRecord = records[0]; // records are sorted by timestamp desc
-
-    if (lastRecord) {
-      const timeSinceLastRecord = now - lastRecord.timestamp;
-      if (timeSinceLastRecord < oneHour) {
-        const remainingMinutes = Math.ceil((oneHour - timeSinceLastRecord) / (60 * 1000));
-        return { allowed: false, remainingMinutes, lastRecord };
-      }
+    const today = new Date(now).toDateString();
+    
+    // 统计今天已打卡次数
+    const todayRecords = records.filter(r => new Date(r.timestamp).toDateString() === today);
+    const dailyCount = todayRecords.length;
+    
+    // 如果已达到每日上限，返回提示信息（但仍允许打卡，会删除最早的）
+    if (dailyCount >= MAX_DAILY_RECORDS) {
+      return { 
+        allowed: true, 
+        dailyCount,
+        lastRecord: todayRecords[todayRecords.length - 1] // 最早的一条
+      };
     }
 
-    return { allowed: true };
+    return { allowed: true, dailyCount };
   }, [records]);
 
-  const addRecord = useCallback((mood: Mood, scene?: Scene | null, note?: string, skipCheck: boolean = false) => {
-    // Check if allowed to check in (unless skipCheck is true)
-    if (!skipCheck) {
-      const checkResult = canCheckIn(scene);
-      if (!checkResult.allowed) {
-        return { success: false, ...checkResult };
-      }
-    }
+  const addRecord = useCallback((mood: Mood, scene?: Scene | null, note?: string, _skipCheck: boolean = false) => {
+    const now = Date.now();
+    const today = new Date(now).toDateString();
 
     const newRecord: MoodRecord = {
       id: Date.now().toString(),
@@ -88,25 +87,31 @@ export function useMoodHistory() {
       sceneId: scene?.id,
       sceneName: scene?.name,
       sceneIcon: scene?.icon,
-      timestamp: Date.now(),
+      timestamp: now,
       note,
     };
 
     setRecords(prev => {
-      // 如果是强制打卡（skipCheck=true），删除1小时内的旧记录，避免重复
-      if (skipCheck && prev.length > 0) {
-        const oneHour = 60 * 60 * 1000;
-        const now = Date.now();
-        // 过滤掉1小时内的记录（保留1小时前的记录）
-        const filtered = prev.filter(r => now - r.timestamp > oneHour);
-        return [newRecord, ...filtered];
+      // 如果启用了打卡限制，检查每日上限
+      if (ENABLE_CHECKIN_LIMIT) {
+        // 获取今天的所有记录
+        const todayRecords = prev.filter(r => new Date(r.timestamp).toDateString() === today);
+        
+        // 如果今天已经达到上限，删除最早的一条
+        if (todayRecords.length >= MAX_DAILY_RECORDS) {
+          // 按时间升序排序，获取最早的一条
+          const oldestToday = [...todayRecords].sort((a, b) => a.timestamp - b.timestamp)[0];
+          const filtered = prev.filter(r => r.id !== oldestToday.id);
+          return [newRecord, ...filtered];
+        }
       }
+      
       // 正常情况：直接添加新记录
       return [newRecord, ...prev];
     });
     
     return { success: true, record: newRecord };
-  }, [canCheckIn]);
+  }, []);
 
   const deleteRecord = useCallback((id: string) => {
     setRecords(prev => prev.filter(r => r.id !== id));

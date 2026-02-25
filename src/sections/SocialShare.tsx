@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Copy, Check, Quote, Share2, Users, Trophy, Gift, Sparkles } from 'lucide-react';
+import { Copy, Check, Quote, Share2, Users, Trophy, Gift, Sparkles, Image as ImageIcon, Edit2, CheckCircle2 } from 'lucide-react';
 import type { MoodStats, MoodRecord } from '@/hooks/useMoodHistory';
 import { inspirationalQuotes, moodQuotes } from '@/data/moods';
+import { MoodCard } from '@/components/MoodCard';
+
+// 本地存储键 - 与MoodCard组件保持一致
+const STORAGE_KEY_USERNAME = 'moodflow_card_username';
 
 interface SocialShareProps {
   stats: MoodStats;
@@ -26,6 +30,7 @@ const inviteRewards: InviteReward[] = [
 export function SocialShare({ stats, isActive, recentRecord }: SocialShareProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showCard, setShowCard] = useState(false);
   
   // 根据最新情绪获取初始心语
   const getInitialQuote = () => {
@@ -37,6 +42,17 @@ export function SocialShare({ stats, isActive, recentRecord }: SocialShareProps)
   };
   
   const [randomQuote, setRandomQuote] = useState(getInitialQuote());
+  const [isEditingQuote, setIsEditingQuote] = useState(false);
+  const [editedQuote, setEditedQuote] = useState('');
+  const [username, setUsername] = useState('');
+
+  // 从localStorage加载用户名
+  useEffect(() => {
+    const savedUsername = localStorage.getItem(STORAGE_KEY_USERNAME);
+    if (savedUsername) {
+      setUsername(savedUsername);
+    }
+  }, []);
 
   useEffect(() => {
     if (isActive) {
@@ -152,15 +168,70 @@ ${inviteLink}
             <h3 className="text-xl font-bold text-gray-800 mb-2">每日心语</h3>
           </div>
 
-          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6 mb-6">
-            <p className="text-lg text-gray-700 text-center leading-relaxed mb-4">
-              "{randomQuote.text}"
-            </p>
-            <p className="text-sm text-gray-400 text-center">—— {randomQuote.author}</p>
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6 mb-6 relative group">
+            {/* 编辑按钮 */}
+            {!isEditingQuote && (
+              <button
+                onClick={() => {
+                  setEditedQuote(randomQuote.text);
+                  setIsEditingQuote(true);
+                }}
+                className="absolute top-3 right-3 p-2 rounded-full bg-white/80 text-gray-400 hover:text-amber-500 hover:bg-white opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                title="编辑心语"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            )}
+            
+            {isEditingQuote ? (
+              <div className="space-y-3">
+                <textarea
+                  value={editedQuote}
+                  onChange={(e) => setEditedQuote(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-amber-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none transition-all resize-none text-gray-700 leading-relaxed"
+                  rows={4}
+                  placeholder="输入你想分享的话..."
+                  maxLength={200}
+                />
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">{editedQuote.length}/200</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setIsEditingQuote(false)}
+                      className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200 transition-colors"
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (editedQuote.trim()) {
+                          setRandomQuote({ ...randomQuote, text: editedQuote.trim() });
+                          setIsEditingQuote(false);
+                        }
+                      }}
+                      disabled={!editedQuote.trim()}
+                      className="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      保存
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-lg text-gray-700 text-center leading-relaxed mb-4">
+                  "{randomQuote.text}"
+                </p>
+                <p className="text-sm text-gray-400 text-center">
+                  —— {username || randomQuote.author}
+                </p>
+              </>
+            )}
           </div>
 
-          {/* 邀请好友按钮 */}
-          <div className="flex gap-3 mb-6">
+          {/* 按钮组 */}
+          <div className="flex gap-3 mb-4">
             <button
               onClick={refreshQuote}
               className="flex-1 py-3 px-4 rounded-xl bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-all"
@@ -175,6 +246,15 @@ ${inviteLink}
               邀请好友
             </button>
           </div>
+
+          {/* 生成情绪卡片按钮 */}
+          <button
+            onClick={() => setShowCard(true)}
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2 mb-6"
+          >
+            <ImageIcon className="w-4 h-4" />
+            生成情绪卡片
+          </button>
 
           {/* 复制纯文本按钮（小字） */}
           <button
@@ -215,6 +295,14 @@ ${inviteLink}
           </p>
         </div>
       </div>
+
+      {/* 情绪卡片弹窗 */}
+      <MoodCard
+        record={recentRecord || null}
+        quote={randomQuote}
+        isOpen={showCard}
+        onClose={() => setShowCard(false)}
+      />
 
     </section>
   );

@@ -1,445 +1,141 @@
 import { useState, useCallback } from 'react';
 import type { Mood } from '@/types';
 import type { MoodStats, MoodRecord } from '@/hooks/useMoodHistory';
+import { generateAIAdviceWithDeepSeek, isAIServiceAvailable } from '@/services/aiService';
 
 export interface AIAdvice {
   id: string;
   title: string;
   content: string;
-  category: 'immediate' | 'pattern' | 'lifestyle';
+  category: 'cognition' | 'acceptance' | 'reframe' | 'support';
   moodId?: string;
+  isAIGenerated?: boolean;
 }
 
-// Simulated AI advice database based on mood patterns
-const aiAdviceDatabase: Record<string, AIAdvice[]> = {
+// AI建议每日限制
+const MAX_DAILY_AI_ADVICE = 8;
+const DAILY_ADVICE_COUNT_KEY = 'moodflow_daily_advice_count';
+const DAILY_ADVICE_DATE_KEY = 'moodflow_daily_advice_date';
+const ENABLE_AI_ADVICE_LIMIT = import.meta.env.VITE_ENABLE_AI_ADVICE_LIMIT === 'true';
+
+// 情绪导向建议库（9种情绪 × 8条建议 = 72条）
+// 核心目标：提高情绪认知、提供心理安抚和支持
+const emotionBasedAdviceDatabase: Record<string, AIAdvice[]> = {
+  // 焦虑 (Anxiety) - 8条
   anxiety: [
-    {
-      id: 'anxiety-1',
-      title: ' grounding 技巧',
-      content: '当你感到焦虑时，尝试「5-4-3-2-1」grounding 技巧：说出5样你看到的东西、4样你听到的声音、3样你能触摸到的质感、2样你闻到的气味、1样你尝到的味道。这能帮助你回到当下。',
-      category: 'immediate',
-      moodId: 'anxiety',
-    },
-    {
-      id: 'anxiety-2',
-      title: '焦虑的正面意义',
-      content: '焦虑其实是大脑在试图保护你。试着对焦虑说：「谢谢你想要保护我，但我现在很安全。」这种接纳的态度往往能减轻焦虑的强度。',
-      category: 'pattern',
-      moodId: 'anxiety',
-    },
-    {
-      id: 'anxiety-3',
-      title: '建立「焦虑时间」',
-      content: '每天设定15分钟的「焦虑时间」，在这个时间段内允许自己尽情担心。其他时间当焦虑出现时，告诉自己「我会留到焦虑时间再想」。这能帮助你重获掌控感。',
-      category: 'lifestyle',
-      moodId: 'anxiety',
-    },
-    {
-      id: 'anxiety-4',
-      title: '身体扫描放松',
-      content: '从脚趾开始，逐步放松身体的每个部位：脚趾→脚掌→小腿→大腿→腹部→胸部→肩膀→手臂→面部。配合深呼吸，焦虑会随着身体的放松而减轻。',
-      category: 'immediate',
-      moodId: 'anxiety',
-    },
-    {
-      id: 'anxiety-5',
-      title: '焦虑日记',
-      content: '记录每次焦虑的内容和结果。几周后回看，你会发现90%担心的事情都没有发生。这个数据会帮助你建立对焦虑的理性认知。',
-      category: 'pattern',
-      moodId: 'anxiety',
-    },
-    {
-      id: 'anxiety-6',
-      title: '规律运动习惯',
-      content: '每周3次、每次30分钟的有氧运动（快走、慢跑、游泳）能显著降低焦虑水平。运动消耗压力激素，同时产生内啡肽，是天然的抗焦虑药。',
-      category: 'lifestyle',
-      moodId: 'anxiety',
-    },
+    { id: 'anxiety-1', title: '焦虑是保护机制', content: '焦虑是大脑的预警系统，提醒你关注潜在风险。它不是敌人，而是想保护你的朋友。当你理解它的善意，就能更平和地与它相处。', category: 'cognition' },
+    { id: 'anxiety-2', title: '焦虑源于不确定', content: '焦虑往往源于对未来的不确定感。你可能在担心"如果...会怎样"。记住：大多数担心的事情不会发生，即使发生，你也比想象中更有能力应对。', category: 'cognition' },
+    { id: 'anxiety-3', title: '允许自己焦虑', content: '感到焦虑很正常，不需要为此责怪自己。每个人都会焦虑，这是人类的基本情绪。试着对自己说："我现在有点焦虑，这没关系，它会过去的。"', category: 'acceptance' },
+    { id: 'anxiety-4', title: '你不需要完美', content: '焦虑常常伴随着对自己过高的期待。提醒自己：你不需要在每件事上都表现完美。允许自己有瑕疵，允许自己不那么强大，这是自我疼惜的开始。', category: 'acceptance' },
+    { id: 'anxiety-5', title: '区分事实与想象', content: '焦虑会让我们把想象当成事实。问问自己：这个担心是基于确凿的事实，还是我的想象？很多时候，我们焦虑的不是现实，而是脑海中的"如果"。', category: 'reframe' },
+    { id: 'anxiety-6', title: '专注可控的部分', content: '焦虑常让人想控制一切。但有些事情本就不在我们控制范围内。试着把注意力放在你能控制的部分：此刻的行动、当下的选择、自己的态度。', category: 'reframe' },
+    { id: 'anxiety-7', title: '你比想象中坚强', content: '回想过去你克服的困难，每一次你都挺过来了。焦虑会让你忘记自己的力量，但事实是：你比焦虑更强大，你有能力度过这一刻。', category: 'support' },
+    { id: 'anxiety-8', title: '此刻你是安全的', content: '当焦虑席卷而来，提醒自己：此时此刻，我是安全的。环顾四周，感受脚踏实地，你现在所在的地方是安全的。深呼吸，让身体相信这份安全感。', category: 'support' },
   ],
+  
+  // 忧郁 (Melancholy) - 8条
   melancholy: [
-    {
-      id: 'melancholy-1',
-      title: '允许悲伤流动',
-      content: '悲伤是一种自然的情绪，不需要急于摆脱。给自己设定一个「悲伤时间」，比如30分钟，在这段时间内允许自己充分感受悲伤，然后做一些自我关怀的事情。',
-      category: 'immediate',
-      moodId: 'melancholy',
-    },
-    {
-      id: 'melancholy-2',
-      title: '情绪与天气',
-      content: '把情绪想象成天气：忧郁就像阴天或小雨，它不会永远持续。记录你的情绪模式，你会发现即使是忧郁的日子，也有阳光穿透云层的时刻。',
-      category: 'pattern',
-      moodId: 'melancholy',
-    },
-    {
-      id: 'melancholy-3',
-      title: '创造「愉悦清单」',
-      content: '列出10件能让你感到一丝愉悦的小事（如泡杯热茶、听喜欢的歌、看窗外的风景）。当忧郁来袭时，选择其中一件去做，哪怕只是短暂的转移也是有益的。',
-      category: 'lifestyle',
-      moodId: 'melancholy',
-    },
-    {
-      id: 'melancholy-4',
-      title: '倾诉疗愈',
-      content: '找一个信任的人倾诉，或者把感受写下来。表达本身就是疗愈的过程，把内心的沉重转化为语言，负担会减轻很多。',
-      category: 'immediate',
-      moodId: 'melancholy',
-    },
-    {
-      id: 'melancholy-5',
-      title: '忧郁的创造力',
-      content: '历史上许多伟大的艺术作品都诞生于忧郁之中。试着把忧郁转化为创作：写日记、画画、听音乐。你的忧郁可能是创造力的源泉。',
-      category: 'pattern',
-      moodId: 'melancholy',
-    },
-    {
-      id: 'melancholy-6',
-      title: '光照疗法',
-      content: '每天保证30分钟的户外光照，特别是早晨的阳光。光照能促进血清素分泌，改善情绪。如果天气不好，可以使用光疗灯。',
-      category: 'lifestyle',
-      moodId: 'melancholy',
-    },
+    { id: 'melancholy-1', title: '忧郁的意义', content: '忧郁不是软弱，而是深度感受的证明。它说明你有一颗敏感而细腻的心，能够体察到生活的复杂和细微。这种深度是一份礼物，尽管有时会感到沉重。', category: 'cognition' },
+    { id: 'melancholy-2', title: '情绪的潮汐', content: '情绪就像潮水，有涨有落。忧郁是低潮期，它不会永远持续。记住：每一次低潮后都会有涨潮，这是自然的规律，也是情绪的规律。', category: 'cognition' },
+    { id: 'melancholy-3', title: '允许悲伤存在', content: '你不需要强迫自己快乐起来。悲伤和忧郁是正当的情绪，它们有权利存在。试着对自己说："我允许自己感到忧郁，这是我此刻真实的状态。"', category: 'acceptance' },
+    { id: 'melancholy-4', title: '放下苛责', content: '忧郁时我们容易自责："我为什么这么脆弱？"但请记住：感受情绪不是脆弱，压抑情绪才是。给自己一些温柔，你已经足够勇敢了。', category: 'acceptance' },
+    { id: 'melancholy-5', title: '寻找微光', content: '即使在最忧郁的时刻，生活中也有微小的美好：一杯热茶的温度、窗外的阳光、喜欢的歌曲。试着留意这些微光，它们是穿透云层的希望。', category: 'reframe' },
+    { id: 'melancholy-6', title: '今天不代表明天', content: '忧郁会让我们觉得"永远都会这样"。但事实是：今天的感受不代表明天。天气会变，季节会换，你的心情也会。给明天一个机会。', category: 'reframe' },
+    { id: 'melancholy-7', title: '你不孤单', content: '世界上有无数人此刻也在感受着忧郁，包括那些看起来很坚强的人。你不是唯一一个，你不孤单。如果需要，请向身边的人伸出手。', category: 'support' },
+    { id: 'melancholy-8', title: '温柔陪伴自己', content: '想象你最好的朋友正在经历这种忧郁，你会对TA说什么？现在，请用同样温柔的话语对待自己。你值得被温柔以待，包括被自己。', category: 'support' },
   ],
+  
+  // 快乐 (Happy) - 8条
   happy: [
-    {
-      id: 'happy-1',
-      title: ' savoring 技巧',
-      content: '快乐时，试着「品味」这份感受：闭上眼睛，深呼吸，让快乐的感受在身体中扩散。研究表明， savoring 能延长积极情绪的持续时间。',
-      category: 'immediate',
-      moodId: 'happy',
-    },
-    {
-      id: 'happy-2',
-      title: '快乐的涟漪效应',
-      content: '你的快乐不仅影响你自己，也会影响周围的人。分享你的快乐，无论是通过微笑、赞美还是帮助他人，都会让快乐倍增。',
-      category: 'pattern',
-      moodId: 'happy',
-    },
-    {
-      id: 'happy-3',
-      title: '建立「快乐银行」',
-      content: '创建一个「快乐银行」，每天存入至少一件让你开心的小事。当情绪低落时，你可以从这个「银行」中提取快乐回忆。',
-      category: 'lifestyle',
-      moodId: 'happy',
-    },
-    {
-      id: 'happy-4',
-      title: '庆祝小胜利',
-      content: '不要只庆祝大成就，为每一个小进步鼓掌：完成了一项任务、学会了新技能、帮助了他人。小胜利的积累会带来持久的幸福感。',
-      category: 'immediate',
-      moodId: 'happy',
-    },
-    {
-      id: 'happy-5',
-      title: '快乐的习惯',
-      content: '研究发现，约50%的快乐来自基因，10%来自环境，40%来自我们的选择和习惯。主动选择快乐的活动，培养快乐的习惯。',
-      category: 'pattern',
-      moodId: 'happy',
-    },
-    {
-      id: 'happy-6',
-      title: '社交连接',
-      content: '哈佛大学的研究表明，良好的人际关系是幸福的最重要预测因子。定期与亲友聚会，建立深层的社交连接，这是快乐的长效投资。',
-      category: 'lifestyle',
-      moodId: 'happy',
-    },
+    { id: 'happy-1', title: '快乐是礼物', content: '快乐不是理所当然的，它是生活送给你的礼物。花一点时间觉察这份快乐：它从哪里来？是什么让你微笑？珍惜它，记住它。', category: 'cognition' },
+    { id: 'happy-2', title: '品味快乐', content: '快乐往往转瞬即逝，因为我们急于追逐下一个目标。试着放慢脚步，深呼吸，让这份快乐在心中多停留一会儿。这是你应得的美好时光。', category: 'cognition' },
+    { id: 'happy-3', title: '你值得快乐', content: '有些人在快乐时会感到愧疚，觉得"我不配这么开心"。但请记住：你值得快乐，你值得美好，你值得生活中的每一个笑容。', category: 'acceptance' },
+    { id: 'happy-4', title: '快乐无需理由', content: '你不需要为快乐找理由或证明自己值得快乐。快乐本身就是足够的，它不需要被证明或解释。允许自己单纯地享受这份感受。', category: 'acceptance' },
+    { id: 'happy-5', title: '分享快乐', content: '快乐有一个神奇的特质：分享出去不会减少，反而会加倍。把你的快乐传递给身边的人，一个微笑、一句赞美、一个拥抱。', category: 'reframe' },
+    { id: 'happy-6', title: '快乐是选择', content: '研究表明，约40%的快乐来自我们主动的选择和习惯。这意味着你有能力创造更多快乐，通过你的态度、行动和关注点。', category: 'reframe' },
+    { id: 'happy-7', title: '记录快乐时刻', content: '把这一刻记录下来：写在日记里、拍张照片、或只是在心中留个记号。当未来感到低落时，这些记忆会成为你的情绪储备。', category: 'support' },
+    { id: 'happy-8', title: '快乐会回来', content: '即使快乐现在离开，它也会再回来。就像季节轮转，快乐也会循环往复。珍惜当下，但也不必过度执着，相信它会再次到来。', category: 'support' },
   ],
-  calm: [
-    {
-      id: 'calm-1',
-      title: '深化平静',
-      content: '平静是宝贵的状态。试着在这个时刻对自己说：「我允许自己享受这份宁静，我不需要做任何事，只需要存在。」',
-      category: 'immediate',
-      moodId: 'calm',
-    },
-    {
-      id: 'calm-2',
-      title: '平静的锚点',
-      content: '注意是什么让你感到平静——是环境、活动还是某种想法？这些是你的「平静锚点」，可以在未来情绪波动时帮助你找回平静。',
-      category: 'pattern',
-      moodId: 'calm',
-    },
-    {
-      id: 'calm-3',
-      title: '每日平静仪式',
-      content: '建立一个每日平静仪式：可能是早晨的5分钟冥想、午后的茶歇时光，或睡前的放松练习。让平静成为生活的常态。',
-      category: 'lifestyle',
-      moodId: 'calm',
-    },
-    {
-      id: 'calm-4',
-      title: '正念呼吸',
-      content: '专注于呼吸的进出，感受空气流过鼻腔的温度变化。当思绪飘走时，温柔地把注意力带回到呼吸。这是回到当下的快速通道。',
-      category: 'immediate',
-      moodId: 'calm',
-    },
-    {
-      id: 'calm-5',
-      title: '平静的力量',
-      content: '平静不是没有波澜，而是学会在波澜中保持中心。就像台风眼，外界再混乱，中心依然宁静。培养这种内在的稳定性。',
-      category: 'pattern',
-      moodId: 'calm',
-    },
-    {
-      id: 'calm-6',
-      title: '数字排毒',
-      content: '每天设定1小时的「无屏幕时间」：不看手机、不刷社交媒体。让大脑从信息过载中解脱，回归内在的宁静。',
-      category: 'lifestyle',
-      moodId: 'calm',
-    },
-  ],
-  stress: [
-    {
-      id: 'stress-1',
-      title: '压力释放',
-      content: '压力是身体在准备应对挑战。试着对身体说：「谢谢你为我做准备，但现在我可以放松了。」然后做几次深呼吸，释放紧绷的肌肉。',
-      category: 'immediate',
-      moodId: 'stress',
-    },
-    {
-      id: 'stress-2',
-      title: '压力的正面价值',
-      content: '适度的压力实际上能提高表现（耶克斯-多德森定律）。关键是找到平衡点：足够的压力让你保持专注，但不过度压垮你。',
-      category: 'pattern',
-      moodId: 'stress',
-    },
-    {
-      id: 'stress-3',
-      title: '压力预防系统',
-      content: '识别你的压力预警信号（如头痛、易怒、睡眠问题）。当这些信号出现时，立即启动「减压模式」：减少任务、增加休息、寻求支持。',
-      category: 'lifestyle',
-      moodId: 'stress',
-    },
-    {
-      id: 'stress-4',
-      title: '任务分解法',
-      content: '当压力来自任务过多时，试试「番茄工作法」：25分钟专注一个任务，然后休息5分钟。小步前进比大步停滞更有效。',
-      category: 'immediate',
-      moodId: 'stress',
-    },
-    {
-      id: 'stress-5',
-      title: '压力与成长',
-      content: '回想过去，你最自豪的成就往往伴随着压力。压力是成长的催化剂，它推动你走出舒适区，发现新的可能。',
-      category: 'pattern',
-      moodId: 'stress',
-    },
-    {
-      id: 'stress-6',
-      title: '建立支持网络',
-      content: '不要独自承担所有压力。建立一个「支持清单」：列出3-5个你可以在困难时求助的人。知道有人支持你，压力会减轻很多。',
-      category: 'lifestyle',
-      moodId: 'stress',
-    },
-  ],
-  // 懊悔 - 新增
+  
+  // 懊悔 (Regret) - 8条
   regret: [
-    {
-      id: 'regret-1',
-      title: '与过去和解',
-      content: '懊悔说明你有一颗在乎的心。试着对自己说：「那时的我已经尽力了，带着当时的认知和资源，我做了最好的选择。」',
-      category: 'immediate',
-      moodId: 'regret',
-    },
-    {
-      id: 'regret-2',
-      title: '懊悔的功课',
-      content: '每一次懊悔都是一次学习的机会。问自己：「如果重来一次，我会怎么做？」然后把答案写下来，这是给未来的自己的礼物。',
-      category: 'pattern',
-      moodId: 'regret',
-    },
-    {
-      id: 'regret-3',
-      title: '原谅练习',
-      content: '每天对着镜子说：「我原谅自己，我接纳自己，我在成长。」自我原谅不是放纵，而是给自己重新出发的力量。',
-      category: 'lifestyle',
-      moodId: 'regret',
-    },
-    {
-      id: 'regret-4',
-      title: '转换视角',
-      content: '想象10年后的自己回看现在，会对今天的你说什么？通常我们会发现，现在纠结的事，在时间的长河中并没有那么重要。',
-      category: 'immediate',
-      moodId: 'regret',
-    },
-    {
-      id: 'regret-5',
-      title: '行动疗愈',
-      content: '如果可能，为过去的事做一次弥补：道歉、改正、或只是承认错误。行动是化解懊悔最有效的方式，哪怕只是一小步。',
-      category: 'pattern',
-      moodId: 'regret',
-    },
-    {
-      id: 'regret-6',
-      title: '珍惜当下',
-      content: '懊悔让我们忽视现在。建立一个「当下感恩」习惯：每天记录3件今天做得好的小事，把注意力从过去拉回到现在。',
-      category: 'lifestyle',
-      moodId: 'regret',
-    },
+    { id: 'regret-1', title: '懊悔说明成长', content: '你感到懊悔，是因为现在的你比过去更成熟、更有智慧。懊悔不是失败的证明，而是成长的标志。它说明你在进步。', category: 'cognition' },
+    { id: 'regret-2', title: '过去的最优解', content: '回望过去时，要记住：那时的你已经尽力了。用现在的认知评判过去的选择是不公平的。你带着当时的资源和理解，做出了那时最好的选择。', category: 'cognition' },
+    { id: 'regret-3', title: '原谅自己', content: '原谅不是忘记或纵容，而是放下沉重的负担。试着对自己说："我原谅那时的自己，我接纳那个不完美的我。"这是给自己的礼物。', category: 'acceptance' },
+    { id: 'regret-4', title: '没有人完美', content: '每个人都有懊悔的事，这是人生的一部分。完美的人不存在，完美的决定也不存在。你的懊悔让你更人性化，更真实。', category: 'acceptance' },
+    { id: 'regret-5', title: '从懊悔中学习', content: '把懊悔转化为智慧：如果重来一次，你会怎么做？把答案记录下来，这是未来的自己的指南。懊悔可以成为成长的养分。', category: 'reframe' },
+    { id: 'regret-6', title: '活在当下', content: '懊悔让我们困在过去，但生活在当下。每一次呼吸都是新的开始，每一刻都是重新选择的机会。过去不能改变，但现在可以。', category: 'reframe' },
+    { id: 'regret-7', title: '时间会疗愈', content: '现在刺痛的懊悔，随着时间推移会慢慢变淡。相信时间的力量，也相信自己的韧性。你有能力走过这段艰难的时光。', category: 'support' },
+    { id: 'regret-8', title: '你还有未来', content: '懊悔是关于过去的，但你的人生还有很长的未来。不要让过去定义你的未来。你还有无数次机会做得更好、选择更好。', category: 'support' },
   ],
-  // 期待 - 新增
+  
+  // 平静 (Calm) - 8条
+  calm: [
+    { id: 'calm-1', title: '平静的珍贵', content: '在这个快节奏的世界里，平静是稀缺而宝贵的。此刻的你正处在一个难得的状态，好好享受这份宁静，让它滋养你的心灵。', category: 'cognition' },
+    { id: 'calm-2', title: '平静的力量', content: '平静不是软弱或消极，而是一种强大的力量。在平静中，你能看得更清楚、想得更深入、做出更明智的决定。这是你的超能力。', category: 'cognition' },
+    { id: 'calm-3', title: '允许平静存在', content: '有些人在平静时会感到不安，觉得"应该做点什么"。但其实，平静本身就足够好。允许自己什么都不做，只是存在。', category: 'acceptance' },
+    { id: 'calm-4', title: '平静不等于停滞', content: '平静不是停止前进，而是在前进中保持内在的稳定。就像水面平静的湖水，深处依然在流动。平静让你以更好的状态前行。', category: 'acceptance' },
+    { id: 'calm-5', title: '找到平静锚点', content: '留意是什么带来了这份平静：环境、活动、还是某种想法？这些是你的"平静锚点"，记住它们，未来需要时可以回到这里。', category: 'reframe' },
+    { id: 'calm-6', title: '平静是可习得的', content: '平静不只是运气，它是可以培养的技能。通过正念练习、深呼吸、冥想，你可以训练自己更容易进入平静状态。', category: 'reframe' },
+    { id: 'calm-7', title: '分享平静能量', content: '平静会传染。你的平静能影响周围的人，让他们也感到安宁。在这个焦虑的时代，你的平静是送给世界的礼物。', category: 'support' },
+    { id: 'calm-8', title: '储存平静能量', content: '把这份平静储存在心里，像充电一样。当未来遇到风浪时，你可以回想这一刻，提醒自己：我知道平静的感觉，我可以再次找到它。', category: 'support' },
+  ],
+  
+  // 期待 (Anticipation) - 8条
   anticipation: [
-    {
-      id: 'anticipation-1',
-      title: '享受期待本身',
-      content: '研究表明，期待某件事的过程往往比事情本身更让人快乐。深呼吸，细细品味这份美好的不确定性。',
-      category: 'immediate',
-      moodId: 'anticipation',
-    },
-    {
-      id: 'anticipation-2',
-      title: '期待的双面性',
-      content: '期待带来动力，但也可能带来焦虑。觉察你的期待是否变成了执念。健康的期待是开放的：「我希望它发生，但我也接受其他可能。」',
-      category: 'pattern',
-      moodId: 'anticipation',
-    },
-    {
-      id: 'anticipation-3',
-      title: '可视化练习',
-      content: '每天花5分钟想象期待的事情已经实现：看到什么、听到什么、感受到什么。可视化能增强动力，也能让大脑提前适应成功。',
-      category: 'lifestyle',
-      moodId: 'anticipation',
-    },
-    {
-      id: 'anticipation-4',
-      title: '准备计划',
-      content: '期待最好的结果，但为可能的情况做准备。列一个「如果-那么」清单：如果A发生，我怎么做；如果B发生，我怎么做。',
-      category: 'immediate',
-      moodId: 'anticipation',
-    },
-    {
-      id: 'anticipation-5',
-      title: '期待与耐心',
-      content: '好东西值得等待。把期待看作一场马拉松而不是短跑，每一次等待都是在锻炼你的耐心肌肉。',
-      category: 'pattern',
-      moodId: 'anticipation',
-    },
-    {
-      id: 'anticipation-6',
-      title: '小期待日常',
-      content: '不要只期待大事，培养对小事情的期待：明天的早餐、周末的电影、朋友的电话。让生活充满小确幸的期待。',
-      category: 'lifestyle',
-      moodId: 'anticipation',
-    },
+    { id: 'anticipation-1', title: '期待的喜悦', content: '研究发现，期待某件事的过程往往比事情本身更让人快乐。你正处在这个美好的阶段，好好享受这份充满可能性的感受。', category: 'cognition' },
+    { id: 'anticipation-2', title: '不确定的美', content: '期待之所以美好，正是因为结果还未知。这份不确定性让生活充满悬念和惊喜。拥抱这份未知，它是冒险的开始。', category: 'cognition' },
+    { id: 'anticipation-3', title: '期待是正常的', content: '对未来充满期待是人之常情，不需要为此感到不踏实。期待给我们动力，让我们对未来保持热情。这是健康而积极的情绪。', category: 'acceptance' },
+    { id: 'anticipation-4', title: '平衡期待与现实', content: '期待时也要保持弹性。最健康的期待是："我希望它发生，但我也能接受其他可能。"这样无论结果如何，你都不会太失望。', category: 'acceptance' },
+    { id: 'anticipation-5', title: '准备而不焦虑', content: '期待不等于焦虑。你可以为未来做准备，但不必过度担忧。问自己：我能做些什么准备？做完这些，剩下的就交给时间。', category: 'reframe' },
+    { id: 'anticipation-6', title: '享受过程', content: '通往目标的路途也是旅程的一部分。不要只盯着终点，看看沿途的风景。每一步都值得被珍惜，每一刻都是经历。', category: 'reframe' },
+    { id: 'anticipation-7', title: '保持耐心', content: '好的东西值得等待。期待教会我们耐心，锻炼我们延迟满足的能力。这是一份重要的人生功课，你正在学习它。', category: 'support' },
+    { id: 'anticipation-8', title: '相信美好', content: '你的期待说明你相信未来会有美好的事情发生。这份信念很珍贵，请好好保护它。即使有时会失望，也不要失去相信美好的能力。', category: 'support' },
   ],
-  // 满足 - 新增
+  
+  // 满足 (Content) - 8条
   content: [
-    {
-      id: 'content-1',
-      title: '停留此刻',
-      content: '满足是一种珍贵的状态，不需要急于追求下一个目标。闭上眼睛，深呼吸，让满足感渗透进每一个细胞。',
-      category: 'immediate',
-      moodId: 'content',
-    },
-    {
-      id: 'content-2',
-      title: '满足的智慧',
-      content: '满足不等于停滞不前，而是懂得欣赏已经拥有的。就像登山者回望来时的路，满足让我们看到已经走过的距离。',
-      category: 'pattern',
-      moodId: 'content',
-    },
-    {
-      id: 'content-3',
-      title: '感恩日记',
-      content: '每天记录3件让你感到满足的事，无论多小。持续的感恩练习能重塑大脑，让你更容易发现生活中的美好。',
-      category: 'lifestyle',
-      moodId: 'content',
-    },
-    {
-      id: 'content-4',
-      title: '分享满足',
-      content: '满足感会传染。把你的满足分享给身边的人：告诉朋友你为什么开心，赞美家人的付出，传递这份温暖。',
-      category: 'immediate',
-      moodId: 'content',
-    },
-    {
-      id: 'content-5',
-      title: '足够的心态',
-      content: '广告让我们永远觉得自己缺少什么，但满足告诉我们：「我已经足够了。」这种心态是抵御消费主义的最佳防线。',
-      category: 'pattern',
-      moodId: 'content',
-    },
-    {
-      id: 'content-6',
-      title: '知足常乐',
-      content: '建立一个「足够清单」：列出你已经拥有的、让你感到幸福的东西。当你感到匮乏时，看看这个清单。',
-      category: 'lifestyle',
-      moodId: 'content',
-    },
+    { id: 'content-1', title: '满足是智慧', content: '在一个不断追求"更多"的时代，能感到满足是一种智慧。你懂得欣赏已经拥有的，这让你比大多数人更富有。', category: 'cognition' },
+    { id: 'content-2', title: '足够的魔法', content: '满足告诉你："我已经足够了。"这不是停止成长，而是不再被匮乏感驱使。你可以从内在的充足出发，而不是从恐惧出发。', category: 'cognition' },
+    { id: 'content-3', title: '珍惜这一刻', content: '满足是稀有的情绪，请好好珍惜。深呼吸，让这份感觉渗透进每一个细胞。记住此刻的感受，它是你情绪世界的宝藏。', category: 'acceptance' },
+    { id: 'content-4', title: '满足不是终点', content: '满足不意味着不再追求，而是在追求的路上保持内在的充实。你可以同时满足于现状，又向往更好的未来。', category: 'acceptance' },
+    { id: 'content-5', title: '感恩的力量', content: '满足常常伴随着感恩。留意你此刻感激的事物，无论大小。感恩能重塑大脑，让你更容易感受到满足和幸福。', category: 'reframe' },
+    { id: 'content-6', title: '抵御匮乏感', content: '广告和社交媒体总在告诉我们"还不够"。但你的满足是对这种声音的回应："我已经拥有的就很好。"这是一种勇气。', category: 'reframe' },
+    { id: 'content-7', title: '分享你的满足', content: '满足感是会传染的。分享你对生活的满意，不是炫耀，而是提醒别人：幸福不需要等到"某一天"，它可以是现在。', category: 'support' },
+    { id: 'content-8', title: '建立满足清单', content: '记录下让你感到满足的事物，无论多小：一杯热茶、一通电话、一个拥抱。这个清单是你的情绪锚点，需要时可以回看。', category: 'support' },
   ],
-  // 怀疑 - 新增
+  
+  // 怀疑 (Doubt) - 8条
   doubt: [
-    {
-      id: 'doubt-1',
-      title: '怀疑暂停键',
-      content: '当怀疑让你陷入分析瘫痪时，设定一个「决定截止时间」。告诉自己：「我会在今晚8点前做出选择，然后执行。」',
-      category: 'immediate',
-      moodId: 'doubt',
-    },
-    {
-      id: 'doubt-2',
-      title: '怀疑的价值',
-      content: '怀疑是批判性思维的起点，它让你更谨慎、更全面地考虑问题。关键是不要让怀疑变成自我否定。',
-      category: 'pattern',
-      moodId: 'doubt',
-    },
-    {
-      id: 'doubt-3',
-      title: '信息收集期',
-      content: '当怀疑源于信息不足时，设定一个「研究期限」。在这个期限内收集信息，期限到了就做决定，不再无限拖延。',
-      category: 'lifestyle',
-      moodId: 'doubt',
-    },
-    {
-      id: 'doubt-4',
-      title: '小步验证',
-      content: '如果怀疑某个选择，先小规模测试。想换工作？先兼职试试；想搬家？先去住一周。用实践代替空想。',
-      category: 'immediate',
-      moodId: 'doubt',
-    },
-    {
-      id: 'doubt-5',
-      title: '区分怀疑与恐惧',
-      content: '问自己：「我的怀疑是基于事实，还是基于恐惧？」事实需要分析，恐惧需要勇气。识别它们的区别，对症下药。',
-      category: 'pattern',
-      moodId: 'doubt',
-    },
-    {
-      id: 'doubt-6',
-      title: '信任练习',
-      content: '怀疑往往源于不信任。每天练习一次「信任」：相信一个陌生人的善意、相信自己的直觉、相信事情会好起来。',
-      category: 'lifestyle',
-      moodId: 'doubt',
-    },
+    { id: 'doubt-1', title: '怀疑是理性的开始', content: '怀疑不是软弱，而是批判性思维的起点。你不盲目相信，而是认真思考，这是理性和成熟的表现。', category: 'cognition' },
+    { id: 'doubt-2', title: '不确定也正常', content: '在这个充满不确定性的世界里，怀疑是正常的。你不需要对每件事都有答案，不确定本身也是一种诚实的状态。', category: 'cognition' },
+    { id: 'doubt-3', title: '允许自己犹豫', content: '不是每个决定都需要立刻做出。允许自己有犹豫的空间，给自己时间思考。匆忙的决定往往不是好决定。', category: 'acceptance' },
+    { id: 'doubt-4', title: '完美的选择不存在', content: '你可能在寻找"完美的答案"，但往往不存在绝对完美的选择。每个选择都有利弊，关键是找到对你而言足够好的那个。', category: 'acceptance' },
+    { id: 'doubt-5', title: '区分怀疑与恐惧', content: '问自己：我的怀疑基于事实还是恐惧？事实需要分析，恐惧需要勇气。识别它们的区别，然后对症下药。', category: 'reframe' },
+    { id: 'doubt-6', title: '小步验证', content: '如果不确定某个选择，试着小规模测试。不必一步到位，先迈出小小的一步，看看感觉如何。用实践代替空想。', category: 'reframe' },
+    { id: 'doubt-7', title: '信任你的直觉', content: '除了理性分析，也要听听内心的声音。有时候，直觉会比头脑更快地知道答案。给直觉一个发言的机会。', category: 'support' },
+    { id: 'doubt-8', title: '没有完美的时机', content: '你可能在等待"完美的时机"，但它很少会来。有时候，最好的策略就是：收集足够的信息，设定一个决定截止时间，然后行动。', category: 'support' },
   ],
-  default: [
-    {
-      id: 'default-1',
-      title: '情绪觉察',
-      content: '无论你现在感受到什么情绪，都值得被关注和理解。情绪是内心的信使，试着倾听它想告诉你什么。',
-      category: 'immediate',
-    },
-    {
-      id: 'default-2',
-      title: '情绪日记的价值',
-      content: '持续记录情绪能帮助你发现模式和触发因素。随着时间的推移，你会更了解自己的情绪规律，从而更好地管理它们。',
-      category: 'pattern',
-    },
-    {
-      id: 'default-3',
-      title: '自我关怀日常',
-      content: '建立自我关怀的日常习惯：充足的睡眠、健康的饮食、适度的运动、与亲友的联系。这些是你的情绪健康基础。',
-      category: 'lifestyle',
-    },
+  
+  // 压力 (Stress) - 8条
+  stress: [
+    { id: 'stress-1', title: '压力是成长信号', content: '压力说明你正在挑战自己的舒适区，这是成长的必经之路。没有压力就没有突破，你正走在进步的路上。', category: 'cognition' },
+    { id: 'stress-2', title: '适度压力提升表现', content: '研究表明，适度的压力能提高专注力和表现力（耶克斯-多德森定律）。你的压力可能是帮助你完成任务的动力。', category: 'cognition' },
+    { id: 'stress-3', title: '承认压力的存在', content: '不要假装"我很好"。承认压力的存在不是软弱，而是自我觉察。只有承认它，你才能有效地应对它。', category: 'acceptance' },
+    { id: 'stress-4', title: '你已经够努力了', content: '压力常让我们觉得"还不够努力"。但请停下来问自己：我真的不够努力吗？还是我已经尽力了？给自己应得的肯定。', category: 'acceptance' },
+    { id: 'stress-5', title: '分解压力源', content: '把大的压力拆解成小的部分：哪些是你能控制的？哪些不能？专注于能控制的部分，对不能控制的部分学会放手。', category: 'reframe' },
+    { id: 'stress-6', title: '压力是暂时的', content: '现在的压力感觉很大，但它不会永远持续。回想过去，每一次压力都过去了，每一次你都挺了过来。这次也一样。', category: 'reframe' },
+    { id: 'stress-7', title: '寻求支持', content: '你不需要独自承担所有压力。向可信赖的人倾诉，寻求帮助不是软弱，而是智慧。我们都需要彼此的支持。', category: 'support' },
+    { id: 'stress-8', title: '照顾好身体', content: '压力会消耗身体能量。确保基本的自我照顾：充足的睡眠、健康的饮食、适度的运动。身体状态好，应对压力的能力会更强。', category: 'support' },
   ],
 };
 
-// 情绪趋势类型
-type Trend = 'improving' | 'worsening' | 'stable' | 'mixed';
 
-// 记录最近推荐的建议ID（避免重复）
-const recentAdviceIds: string[] = [];
-const MAX_RECENT_MEMORY = 3;
+// ===== 以下是旧的建议库，已被上面的情绪导向建议库取代，保留作为参考 =====
+// 如果将来需要可以完全删除
+
+// 情绪趋势类型（用于个性化洞察）
+type Trend = 'improving' | 'worsening' | 'stable' | 'mixed';
 
 // 负面情绪列表
 const negativeMoods = ['anxiety', 'melancholy', 'regret', 'stress', 'doubt'];
@@ -472,130 +168,131 @@ export function useAIAdvice() {
     return false;
   }, []);
 
-  // 根据类别选择建议（避免重复）
-  const selectByCategory = useCallback(
-    (moodAdvice: AIAdvice[], category: string, excludeIds: string[]): AIAdvice | null => {
-      const available = moodAdvice.filter(
-        a => a.category === category && !excludeIds.includes(a.id)
-      );
-      
-      if (available.length > 0) {
-        return available[Math.floor(Math.random() * available.length)];
-      }
-      
-      // 如果目标类别都推荐过了，从其他类别中选择
-      const otherAvailable = moodAdvice.filter(a => !excludeIds.includes(a.id));
-      if (otherAvailable.length > 0) {
-        return otherAvailable[Math.floor(Math.random() * otherAvailable.length)];
-      }
-      
-      return null;
-    },
-  []);
-
-  // 智能选择建议
-  const selectSmartAdvice = useCallback(
-    (moodAdvice: AIAdvice[], trend: Trend, hasNegativeStreak: boolean): AIAdvice => {
-      // 策略4: 连续负面情绪预警 - 优先即时缓解
-      if (hasNegativeStreak) {
-        const advice = selectByCategory(moodAdvice, 'immediate', recentAdviceIds);
-        if (advice) return advice;
-      }
-      
-      // 策略1: 基于情绪趋势选择
-      const trendCategoryMap: Record<Trend, string> = {
-        improving: 'pattern',    // 改善中: 强化积极模式
-        worsening: 'immediate',  // 恶化中: 即时缓解
-        stable: 'lifestyle',     // 稳定: 维持习惯
-        mixed: 'pattern',        // 混合: 帮助理解
-      };
-      
-      const targetCategory = trendCategoryMap[trend];
-      let advice = selectByCategory(moodAdvice, targetCategory, recentAdviceIds);
-      
-      // 策略2: 避免重复 - 如果目标类别都推荐过了，尝试其他类别
-      if (!advice) {
-        // 尝试其他类别，按优先级
-        const otherCategories = ['immediate', 'pattern', 'lifestyle'].filter(c => c !== targetCategory);
-        for (const category of otherCategories) {
-          advice = selectByCategory(moodAdvice, category, recentAdviceIds);
-          if (advice) break;
-        }
-      }
-      
-      // 如果所有类别都过滤掉了（说明最近推荐了很多），选择最近推荐中最老的一条
-      if (!advice && recentAdviceIds.length > 0) {
-        // 移除最老的记录，释放一个选择
-        recentAdviceIds.shift();
-        // 重新尝试选择
-        advice = selectByCategory(moodAdvice, targetCategory, recentAdviceIds);
-        if (!advice) {
-          // 如果还是选不到，从所有建议中排除剩余的最近记录
-          const available = moodAdvice.filter(a => !recentAdviceIds.includes(a.id));
-          if (available.length > 0) {
-            advice = available[Math.floor(Math.random() * available.length)];
-          }
-        }
-      }
-      
-      // 最后的保底：随机选择（理论上不会走到这里）
-      if (!advice) {
-        advice = moodAdvice[Math.floor(Math.random() * moodAdvice.length)];
-      }
-      
-      return advice;
-    },
-    [selectByCategory]
-  );
-
-  // 更新推荐历史
-  const updateAdviceHistory = useCallback((adviceId: string) => {
-    recentAdviceIds.push(adviceId);
-    if (recentAdviceIds.length > MAX_RECENT_MEMORY) {
-      recentAdviceIds.shift();
+  // 获取今日AI建议使用次数
+  const getDailyAdviceCount = useCallback((): number => {
+    const today = new Date().toDateString();
+    const savedDate = localStorage.getItem(DAILY_ADVICE_DATE_KEY);
+    const savedCount = localStorage.getItem(DAILY_ADVICE_COUNT_KEY);
+    
+    if (savedDate !== today) {
+      // 新的一天，重置计数
+      localStorage.setItem(DAILY_ADVICE_DATE_KEY, today);
+      localStorage.setItem(DAILY_ADVICE_COUNT_KEY, '0');
+      return 0;
     }
+    
+    return parseInt(savedCount || '0', 10);
   }, []);
 
-  // Generate advice based on current mood and historical patterns
-  const generateAdvice = useCallback(async (
+  // 增加今日AI建议使用次数
+  const incrementDailyAdviceCount = useCallback(() => {
+    const count = getDailyAdviceCount();
+    localStorage.setItem(DAILY_ADVICE_COUNT_KEY, (count + 1).toString());
+  }, [getDailyAdviceCount]);
+
+  // 根据情绪获取本地建议（情绪导向）
+  const getEmotionBasedAdvice = useCallback((moodId?: string, excludeId?: string): AIAdvice => {
+    // 如果没有moodId，随机选择一个情绪
+    const defaultMoodId = moodId || ['anxiety', 'melancholy', 'happy', 'calm', 'regret', 'anticipation', 'content', 'doubt', 'stress'][
+      Math.floor(Math.random() * 9)
+    ];
+    
+    let emotionAdvices = emotionBasedAdviceDatabase[defaultMoodId] || emotionBasedAdviceDatabase.anxiety;
+    
+    // 如果有排除ID，过滤掉当前正在显示的建议
+    if (excludeId) {
+      const filtered = emotionAdvices.filter((advice: AIAdvice) => advice.id !== excludeId);
+      if (filtered.length > 0) {
+        emotionAdvices = filtered;
+      }
+    }
+    
+    // 随机选择一条建议
+    const randomIndex = Math.floor(Math.random() * emotionAdvices.length);
+    
+    return {
+      ...emotionAdvices[randomIndex],
+      id: `${emotionAdvices[randomIndex].id}-${Date.now()}`,
+      moodId: defaultMoodId,
+      isAIGenerated: false,
+    };
+  }, []);
+
+  // 生成本地情绪化建议（不消耗AI额度）
+  const generateLocalAdvice = useCallback(async (
     currentMood?: Mood | null,
-    stats?: MoodStats,
-    recentRecords?: MoodRecord[]
+    recentRecords?: MoodRecord[],
+    excludeId?: string
   ): Promise<AIAdvice> => {
     setIsGenerating(true);
     
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 300));
     
-    let advice: AIAdvice;
-    
-    // Get advice based on current mood
-    if (currentMood && aiAdviceDatabase[currentMood.id]) {
-      const moodAdvice = aiAdviceDatabase[currentMood.id];
-      
-      // 新用户（记录少于3条）：给第一条即时建议
-      if (!stats || stats.totalRecords < 3) {
-        advice = moodAdvice[0];
-      } else {
-        // 智能推荐
-        const trend = analyzeTrend(recentRecords || []);
-        const hasNegativeStreak = checkNegativeStreak(recentRecords || []);
-        advice = selectSmartAdvice(moodAdvice, trend, hasNegativeStreak);
-      }
-    } else {
-      // Default advice
-      const defaultAdvice = aiAdviceDatabase.default;
-      advice = defaultAdvice[Math.floor(Math.random() * defaultAdvice.length)];
-    }
-    
-    // 记录本次推荐
-    updateAdviceHistory(advice.id);
+    // 优先使用当前情绪，其次使用最近一条记录的情绪
+    const moodId = currentMood?.id || recentRecords?.[0]?.moodId;
+    // 提取原始ID（去除时间戳后缀）
+    const originalExcludeId = excludeId?.split('-').slice(0, -1).join('-');
+    const advice = getEmotionBasedAdvice(moodId, originalExcludeId);
     
     setCurrentAdvice(advice);
     setIsGenerating(false);
     
     return advice;
-  }, [analyzeTrend, checkNegativeStreak, selectSmartAdvice, updateAdviceHistory]);
+  }, [getEmotionBasedAdvice]);
+
+  // 生成AI建议（消耗额度）
+  const generateAIAdvice = useCallback(async (
+    currentMood?: Mood | null,
+    recentRecords?: MoodRecord[]
+  ): Promise<AIAdvice | null> => {
+    // 如果启用了限制，检查每日额度
+    if (ENABLE_AI_ADVICE_LIMIT) {
+      const dailyCount = getDailyAdviceCount();
+      if (dailyCount >= MAX_DAILY_AI_ADVICE) {
+        return null; // 额度已用完
+      }
+    }
+    
+    const aiAvailable = isAIServiceAvailable();
+    if (!aiAvailable || !currentMood) {
+      return null;
+    }
+    
+    setIsGenerating(true);
+    
+    try {
+      const aiAdvice = await generateAIAdviceWithDeepSeek({
+        currentMood: currentMood.name,
+        currentScene: recentRecords?.[0]?.sceneId || '未知场景',
+        recentRecords: recentRecords || [],
+      });
+      
+      if (aiAdvice) {
+        // 如果启用了限制，增加使用次数
+        if (ENABLE_AI_ADVICE_LIMIT) {
+          incrementDailyAdviceCount();
+        }
+        setCurrentAdvice(aiAdvice);
+        setIsGenerating(false);
+        return aiAdvice;
+      }
+    } catch (error) {
+      console.error('[useAIAdvice] AI service failed:', error);
+    }
+    
+    setIsGenerating(false);
+    return null;
+  }, [getDailyAdviceCount, incrementDailyAdviceCount]);
+
+  // 获取剩余AI建议次数
+  const getRemainingAIAdviceCount = useCallback((): number => {
+    // 如果未启用限制，返回无限额度
+    if (!ENABLE_AI_ADVICE_LIMIT) {
+      return 999; // 显示无限额度
+    }
+    const dailyCount = getDailyAdviceCount();
+    return Math.max(0, MAX_DAILY_AI_ADVICE - dailyCount);
+  }, [getDailyAdviceCount]);
 
   // Get personalized insights based on mood patterns
   const getPersonalizedInsights = useCallback((stats: MoodStats, recentRecords?: MoodRecord[]): string[] => {
@@ -670,7 +367,9 @@ export function useAIAdvice() {
   return {
     isGenerating,
     currentAdvice,
-    generateAdvice,
+    generateLocalAdvice,
+    generateAIAdvice,
+    getRemainingAIAdviceCount,
     getPersonalizedInsights,
     clearAdvice,
   };

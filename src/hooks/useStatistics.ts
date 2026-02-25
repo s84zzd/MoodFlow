@@ -19,6 +19,19 @@ export interface PeriodStats {
   topEmotions: string[];
 }
 
+// AI报告数据类型
+export interface AIReport {
+  id: string;
+  type: 'weekly' | 'monthly';
+  period: string;        // 如 "2月10日-2月16日"
+  generatedAt: number;
+  dominantMood: string;  // 主要情绪
+  summary: string;       // 一句话总结
+  analysis: string;      // AI分析内容
+  suggestions: string[]; // 行动建议
+  trend: 'up' | 'down' | 'stable'; // 趋势
+}
+
 // 情绪颜色映射 - 与知识库中的情绪颜色emoji保持一致
 const moodColors: Record<string, string> = {
   '焦虑': '#ef4444',    // 🔴 红色 - 焦虑

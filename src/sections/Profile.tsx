@@ -4,14 +4,13 @@
  */
 
 import { useState, useEffect } from 'react';
-import { User, BarChart3, Settings, Trophy, Edit3 } from 'lucide-react';
+import { User, BarChart3, Settings, Trophy, BookOpen } from 'lucide-react';
 import type { MoodStats, MoodRecord } from '@/hooks/useMoodHistory';
 import { useStatistics } from '@/hooks/useStatistics';
 import { StatisticsView } from './StatisticsView';
 import { AchievementsView } from './AchievementsView';
 import { ProfileSettingsView } from './ProfileSettingsView';
-import { ProfileEditView } from './ProfileEditView';
-import { ProfileEditModal } from './ProfileEditModal';
+import { KnowledgeView } from './KnowledgeView';
 
 interface ProfileProps {
   stats: MoodStats;
@@ -20,13 +19,12 @@ interface ProfileProps {
   onExportCSV: () => string;
 }
 
-type TabType = 'achievements' | 'stats' | 'profile' | 'settings';
+type TabType = 'achievements' | 'stats' | 'knowledge' | 'settings';
 
 export function Profile({ stats, records, isActive, onExportCSV }: ProfileProps) {
   const [activeTab, setActiveTab] = useState<TabType>('achievements');
   const [isVisible, setIsVisible] = useState(false);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [userProfile, setUserProfile] = useState({
+  const [userProfile] = useState({
     nickname: '情绪探索者',
     bio: '记录每一天的情绪变化，成为更好的自己',
     isPublic: true,
@@ -65,12 +63,6 @@ export function Profile({ stats, records, isActive, onExportCSV }: ProfileProps)
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-300 to-pink-400 flex items-center justify-center mx-auto mb-4">
               <User className="w-10 h-10 text-white" />
             </div>
-            <button 
-              className="absolute bottom-3 right-0 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-rose-500"
-              onClick={() => setIsEditingProfile(true)}
-            >
-              <Edit3 className="w-3 h-3" />
-            </button>
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">{userProfile.nickname}</h2>
           <p className="text-sm text-gray-500 mb-3">{userProfile.bio}</p>
@@ -95,10 +87,10 @@ export function Profile({ stats, records, isActive, onExportCSV }: ProfileProps)
             label="统计"
           />
           <TabButton
-            active={activeTab === 'profile'}
-            onClick={() => setActiveTab('profile')}
-            icon={<User className="w-4 h-4" />}
-            label="资料"
+            active={activeTab === 'knowledge'}
+            onClick={() => setActiveTab('knowledge')}
+            icon={<BookOpen className="w-4 h-4" />}
+            label="知识"
           />
           <TabButton
             active={activeTab === 'settings'}
@@ -118,29 +110,12 @@ export function Profile({ stats, records, isActive, onExportCSV }: ProfileProps)
           <StatisticsView
             stats7Days={getLast7DaysStats()}
             stats4Weeks={getLast4WeeksStats()}
+            records={records}
           />
         )}
-        {activeTab === 'profile' && (
-          <ProfileEditView 
-            profile={userProfile}
-            onUpdate={setUserProfile}
-            stats={stats}
-          />
-        )}
+        {activeTab === 'knowledge' && <KnowledgeView />}
         {activeTab === 'settings' && <ProfileSettingsView onExportCSV={onExportCSV} />}
       </div>
-
-      {/* 编辑资料弹窗 */}
-      {isEditingProfile && (
-        <ProfileEditModal
-          profile={userProfile}
-          onSave={(newProfile) => {
-            setUserProfile(newProfile);
-            setIsEditingProfile(false);
-          }}
-          onClose={() => setIsEditingProfile(false)}
-        />
-      )}
     </section>
   );
 }
