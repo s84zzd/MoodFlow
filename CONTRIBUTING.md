@@ -201,7 +201,7 @@ src/
 
 - 💬 加入讨论：GitHub Discussions
 - 🐦 关注 Twitter：[@MoodFlowApp](https://twitter.com/moodflowapp)
-- 📧 邮件联系：moodflow@example.com
+- 📧 邮件联系：zenbalasmith@gmail.com
 
 ## ❤️ 贡献者 | Contributors
 
