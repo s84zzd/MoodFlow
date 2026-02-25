@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, Heart, Calendar, Download, X, Edit2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import type { MoodRecord } from '@/hooks/useMoodHistory';
 import { moods } from '@/data/moods';
 
@@ -104,9 +105,45 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
   };
 
   // 保存图片功能
+  const [isSaving, setIsSaving] = useState(false);
+  
   const handleSaveImage = async () => {
-    if (!cardRef.current) return;
-    alert('图片保存功能需要集成 html2canvas 库\n当前为演示版本');
+    if (!cardRef.current || isSaving) return;
+    
+    setIsSaving(true);
+    
+    try {
+      // 临时移除拖拽相关的样式，确保截图干净
+      const originalTransform = cardRef.current.style.transform;
+      const originalCursor = cardRef.current.style.cursor;
+      cardRef.current.style.transform = 'none';
+      cardRef.current.style.cursor = 'default';
+      
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 2, // 高清截图
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+      });
+      
+      // 恢复样式
+      cardRef.current.style.transform = originalTransform;
+      cardRef.current.style.cursor = originalCursor;
+      
+      // 转换为图片并下载
+      const image = canvas.toDataURL('image/png', 1.0);
+      const link = document.createElement('a');
+      link.download = `MoodFlow_${currentMood?.name || '心情'}_${new Date().toISOString().slice(0, 10)}.png`;
+      link.href = image;
+      link.click();
+      
+    } catch (error) {
+      console.error('保存图片失败:', error);
+      alert('保存图片失败，请重试');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // 触摸/拖拽事件处理
@@ -335,10 +372,20 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
             {/* 保存按钮 */}
             <button
               onClick={handleSaveImage}
-              className="w-full mt-4 py-4 rounded-2xl bg-white text-gray-800 font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              disabled={isSaving}
+              className="w-full mt-4 py-4 rounded-2xl bg-white text-gray-800 font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <Download className="w-5 h-5" />
-              保存到相册
+              {isSaving ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  生成图片中...
+                </>
+              ) : (
+                <>
+                  <Download className="w-5 h-5" />
+                  保存到相册
+                </>
+              )}
             </button>
           </>
         )}
