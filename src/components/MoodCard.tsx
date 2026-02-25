@@ -163,41 +163,39 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           clonedDoc.body.style.margin = '0';
           clonedDoc.body.style.padding = '0';
           
-          // 强制设置背景渐变（手机端可能需要）
+          // 强制设置背景渐变 - 使用与 Tailwind 一致的方向和颜色
           const currentMoodId = currentMood?.id || 'calm';
           const gradients: Record<string, string> = {
-            anxiety: 'linear-gradient(to bottom right, #f97316, #ec4899)',
-            melancholy: 'linear-gradient(to bottom right, #3b82f6, #8b5cf6)',
-            happy: 'linear-gradient(to bottom right, #eab308, #f97316)',
-            regret: 'linear-gradient(to bottom right, #8b5cf6, #ec4899)',
-            calm: 'linear-gradient(to bottom right, #22c55e, #14b8a6)',
-            anticipation: 'linear-gradient(to bottom right, #f97316, #eab308)',
-            content: 'linear-gradient(to bottom right, #ec4899, #f43f5e)',
-            doubt: 'linear-gradient(to bottom right, #d97706, #f97316)',
-            stress: 'linear-gradient(to bottom right, #dc2626, #ec4899)',
+            anxiety: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+            melancholy: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+            happy: 'linear-gradient(135deg, #eab308 0%, #f97316 100%)',
+            regret: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+            calm: 'linear-gradient(135deg, #22c55e 0%, #14b8a6 100%)',
+            anticipation: 'linear-gradient(135deg, #f97316 0%, #eab308 100%)',
+            content: 'linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)',
+            doubt: 'linear-gradient(135deg, #d97706 0%, #f97316 100%)',
+            stress: 'linear-gradient(135deg, #dc2626 0%, #ec4899 100%)',
           };
           clonedElement.style.background = gradients[currentMoodId] || gradients.calm;
           
-          // 在克隆的元素上确保 emoji 字体正确，并修复布局
+          // 修复 emoji 位置 - 使用更简单的居中方式
           const iconElements = clonedElement.querySelectorAll('[data-emoji]');
           iconElements.forEach(el => {
             const htmlEl = el as HTMLElement;
+            // 重置所有可能影响布局的样式
             htmlEl.style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-            htmlEl.style.fontSize = '2.25rem';
-            htmlEl.style.lineHeight = '1';
+            htmlEl.style.fontSize = '36px';
+            htmlEl.style.lineHeight = '56px'; // 与容器高度一致
+            htmlEl.style.textAlign = 'center';
             htmlEl.style.display = 'flex';
             htmlEl.style.alignItems = 'center';
             htmlEl.style.justifyContent = 'center';
-            htmlEl.style.overflow = 'hidden';
             
-            // 确保子元素也正确居中
+            // 简化子元素样式
             const span = htmlEl.querySelector('span');
             if (span) {
-              span.style.display = 'flex';
-              span.style.alignItems = 'center';
-              span.style.justifyContent = 'center';
-              span.style.width = '100%';
-              span.style.height = '100%';
+              span.style.display = 'block';
+              span.style.lineHeight = 'inherit';
             }
           });
         }
@@ -410,23 +408,16 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                 {currentMood && (
                   <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
                     <div 
-                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex items-center justify-center overflow-hidden"
+                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex items-center justify-center"
                       data-emoji="true"
                       style={{ 
                         fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                        fontSize: '2.25rem',
-                        lineHeight: '1',
+                        fontSize: '36px',
+                        lineHeight: '56px',
+                        textAlign: 'center',
                       }}
                     >
-                      <span style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        width: '100%',
-                        height: '100%',
-                      }}>
-                        {currentMood.icon}
-                      </span>
+                      <span>{currentMood.icon}</span>
                     </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1 text-white drop-shadow-md">{currentMood.name}</p>
