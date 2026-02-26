@@ -10,7 +10,7 @@ import html2canvas from 'html2canvas';
 import type { MoodRecord } from '@/hooks/useMoodHistory';
 import { moods } from '@/data/moods';
 import { QR_CODE_DATA_URL } from '@/assets/qr-code';
-import { getTwemojiUrl } from '@/lib/twemoji';
+import { getMoodEmojiUrl } from '@/assets/emoji-data';
 
 interface MoodCardProps {
   record: MoodRecord | null;
@@ -137,8 +137,8 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       
       const canvas = await html2canvas(cardRef.current, {
         scale: window.devicePixelRatio || 2, // 使用设备像素比，提高清晰度
-        useCORS: true, // 启用 CORS 支持 Twemoji CDN 图片
-        allowTaint: false, // 禁止污染，确保可以导出
+        useCORS: false, // 不需要 CORS，因为所有图片都是 base64 内嵌的
+        allowTaint: true, // 允许污染
         backgroundColor: null, // 背景透明
         removeContainer: true, // 移除临时容器，避免残留
         logging: false,
@@ -175,7 +175,7 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           };
           clonedElement.style.background = gradients[currentMoodId] || gradients.calm;
           
-          // Twemoji 图片已经是标准图片，无需特殊处理
+          // base64 内嵌图片无需特殊处理
         }
       });
       
@@ -429,15 +429,14 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                   </div>
                 </div>
 
-                {/* 情绪展示 - 使用 Twemoji 图片替代原生 emoji，解决 html2canvas 兼容性问题 */}
+                {/* 情绪展示 - 使用内嵌 base64 的 Twemoji 图片，确保所有设备都能显示 */}
                 {currentMood && (
                   <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
                     <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex-shrink-0 flex items-center justify-center p-2 sm:p-3">
                       <img 
-                        src={getTwemojiUrl(currentMood.icon)}
+                        src={getMoodEmojiUrl(currentMood.id)}
                         alt={currentMood.name}
                         className="w-full h-full object-contain"
-                        crossOrigin="anonymous"
                       />
                     </div>
                     <div>
