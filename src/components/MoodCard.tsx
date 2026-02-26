@@ -128,7 +128,8 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
         scale: 2,
         useCORS: false, // 关闭 CORS，因为所有资源都是 inline 的
         allowTaint: true, // 允许污染，因为我们会用 toBlob
-        backgroundColor: null,
+        backgroundColor: null, // 背景透明
+        removeContainer: true, // 移除临时容器，避免残留
         logging: false,
         imageTimeout: 15000,
         ignoreElements: (element) => {
@@ -139,6 +140,10 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           // 确保克隆的文档有正确的视口
           clonedDoc.body.style.margin = '0';
           clonedDoc.body.style.padding = '0';
+          
+          // 确保克隆元素本身没有边距导致白边
+          clonedElement.style.margin = '0';
+          clonedElement.style.padding = '0';
           
           // 强制设置背景渐变 - 使用与 Tailwind 一致的方向和颜色
           const currentMoodId = currentMood?.id || 'calm';
@@ -382,6 +387,7 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
             <div
               ref={cardRef}
               className={`relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br ${getGradient(currentMood?.id)} max-h-[80vh] sm:max-h-none cursor-grab active:cursor-grabbing select-none`}
+              style={{ margin: 0, padding: 0 }}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
