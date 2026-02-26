@@ -121,17 +121,29 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       cardRef.current.style.transform = 'none';
       cardRef.current.style.cursor = 'default';
       
+      // 等待字体加载完成后再截图
+      await document.fonts.ready;
+      
+      // 记录当前滚动位置
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+      
+      // 滚动到顶部确保截图完整
+      window.scrollTo(0, 0);
+      
       // 等待一帧确保样式应用
       await new Promise(resolve => requestAnimationFrame(resolve));
       
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
+        scale: window.devicePixelRatio || 2, // 使用设备像素比，提高清晰度
         useCORS: false, // 关闭 CORS，因为所有资源都是 inline 的
         allowTaint: true, // 允许污染，因为我们会用 toBlob
         backgroundColor: null, // 背景透明
         removeContainer: true, // 移除临时容器，避免残留
         logging: false,
         imageTimeout: 15000,
+        scrollX: 0, // 防止滚动偏移
+        scrollY: 0,
         ignoreElements: (element) => {
           // 忽略可能导致问题的元素
           return element.tagName === 'IFRAME' || element.tagName === 'VIDEO';
@@ -182,6 +194,9 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       });
       
       console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
+      
+      // 恢复滚动位置
+      window.scrollTo(scrollX, scrollY);
       
       // 恢复样式
       cardRef.current.style.transform = originalTransform;
