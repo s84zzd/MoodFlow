@@ -7,7 +7,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, Heart, Calendar, Download, X, Edit2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import QRCode from 'qrcode';
 import type { MoodRecord } from '@/hooks/useMoodHistory';
 import { moods } from '@/data/moods';
 
@@ -35,9 +34,6 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragStart = useRef({ x: 0, y: 0 });
   const currentPosition = useRef({ x: 0, y: 0 });
-  
-  // 二维码状态
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
 
   // 从 localStorage 加载用户名
   useEffect(() => {
@@ -46,30 +42,6 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       setUsername(savedUsername);
     }
   }, []);
-    
-  // 生成二维码
-  useEffect(() => {
-    const generateQRCode = async () => {
-      try {
-        const url = 'https://moodflow-tau.vercel.app'; // 生产环境 URL
-        const qrDataUrl = await QRCode.toDataURL(url, {
-          width: 200,
-          margin: 1,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF',
-          },
-        });
-        setQrCodeUrl(qrDataUrl);
-      } catch (error) {
-        console.error('生成二维码失败:', error);
-      }
-    };
-      
-    if (isOpen) {
-      generateQRCode();
-    }
-  }, [isOpen]);
 
   // 每次打开卡片时，都进入编辑模式让用户确认/修改位置
   useEffect(() => {
@@ -152,11 +124,11 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       await new Promise(resolve => requestAnimationFrame(resolve));
       
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
+        scale: 2, // 降低到2倍，提高稳定性
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false, // 关键修改：不允许污染，确保inline资源
         backgroundColor: null,
-        logging: false,
+        logging: true, // 开启日志以便调试
         imageTimeout: 15000,
         onclone: (clonedDoc, clonedElement) => {
           // 确保克隆的文档有正确的视口
@@ -178,43 +150,70 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           };
           clonedElement.style.background = gradients[currentMoodId] || gradients.calm;
           
-          // 修复 emoji 位置 - 使用更简单的居中方式
+          // 修复 emoji 位置 - 使用绝对定位确保完美居中
           const iconElements = clonedElement.querySelectorAll('[data-emoji]');
           iconElements.forEach(el => {
             const htmlEl = el as HTMLElement;
-            // 重置所有可能影响布局的样式
-            htmlEl.style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-            htmlEl.style.fontSize = '36px';
-            htmlEl.style.lineHeight = '56px'; // 与容器高度一致
-            htmlEl.style.textAlign = 'center';
+            
+            // 设置容器为相对定位
+            htmlEl.style.position = 'relative';
+            htmlEl.style.width = '80px'; // 固定宽度 (20 * 4 = 80px for desktop)
+            htmlEl.style.height = '80px'; // 固定高度
             htmlEl.style.display = 'flex';
             htmlEl.style.alignItems = 'center';
             htmlEl.style.justifyContent = 'center';
+            htmlEl.style.overflow = 'hidden';
             
-            // 简化子元素样式
+            // 找到emoji span并设置样式
             const span = htmlEl.querySelector('span');
-            if (span) {
-              span.style.display = 'block';
-              span.style.lineHeight = 'inherit';
+            if (span instanceof HTMLElement) {
+              span.style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+              span.style.fontSize = '40px'; // 固定大小
+              span.style.lineHeight = '1'; // 关键：使用无单位的line-height
+              span.style.display = 'inline-block';
+              span.style.textAlign = 'center';
+              span.style.verticalAlign = 'middle';
+              span.style.margin = '0';
+              span.style.padding = '0';
             }
           });
         }
       });
       
+      console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
+      
       // 恢复样式
       cardRef.current.style.transform = originalTransform;
       cardRef.current.style.cursor = originalCursor;
       
-      // 转换为图片并下载
-      const image = canvas.toDataURL('image/png', 1.0);
+      // 简化下载流程，使用 toDataURL（最稳定的方式）
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      console.log('DataURL generated, length:', dataUrl.length);
+      
+      const filename = `MoodFlow_${currentMood?.name || '心情'}_${new Date().toISOString().slice(0, 10)}.png`;
+      
+      // 创建下载链接
       const link = document.createElement('a');
-      link.download = `MoodFlow_${currentMood?.name || '心情'}_${new Date().toISOString().slice(0, 10)}.png`;
-      link.href = image;
+      link.href = dataUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      // 添加到页面
+      document.body.appendChild(link);
+      
+      // 触发下载
       link.click();
+      
+      // 延迟清理
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 100);
+      
+      console.log('Download triggered successfully');
       
     } catch (error) {
       console.error('保存图片失败:', error);
-      alert('保存图片失败，请重试');
+      alert(`保存图片失败：${error instanceof Error ? error.message : '未知错误'}\n请查看控制台获取详细信息`);
     } finally {
       setIsSaving(false);
     }
@@ -442,19 +441,15 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                     <p>记录情绪，关爱自己</p>
                     <p>moodflow.app</p>
                   </div>
-                  {/* 二维码 */}
+                  {/* 二维码 - 使用固定图片 */}
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg overflow-hidden p-1">
-                    {qrCodeUrl ? (
-                      <img 
-                        src={qrCodeUrl} 
-                        alt="MoodFlow QR Code" 
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <div className="w-full h-full border-2 border-gray-300 rounded flex items-center justify-center">
-                        <span className="text-gray-400 text-[10px] sm:text-xs">QR</span>
-                      </div>
-                    )}
+                    <img 
+                      src="/qr-code.jpg" 
+                      alt="MoodFlow QR Code" 
+                      className="w-full h-full object-contain"
+                      crossOrigin="anonymous"
+                      data-qr="true"
+                    />
                   </div>
                 </div>
               </div>
