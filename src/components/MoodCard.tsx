@@ -174,27 +174,7 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           };
           clonedElement.style.background = gradients[currentMoodId] || gradients.calm;
           
-          // 修复 emoji 位置 - 使用绝对定位 + transform 确保完美居中
-          const iconElements = clonedElement.querySelectorAll('[data-emoji]');
-          iconElements.forEach(el => {
-            const htmlEl = el as HTMLElement;
-            
-            // 容器设置相对定位
-            htmlEl.style.position = 'relative';
-            htmlEl.style.overflow = 'hidden';
-            
-            // 设置 span 使用绝对定位居中
-            const span = htmlEl.querySelector('span');
-            if (span instanceof HTMLElement) {
-              span.style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-              span.style.fontSize = '2.25rem';
-              span.style.lineHeight = '1';
-              span.style.position = 'absolute';
-              span.style.top = '50%';
-              span.style.left = '50%';
-              span.style.transform = 'translate(-50%, -50%)';
-            }
-          });
+          // emoji 现在直接显示，无需特殊处理
         }
       });
       
@@ -448,27 +428,17 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                   </div>
                 </div>
 
-                {/* 情绪展示 */}
+                {/* 情绪展示 - 简化版：移除装饰框，emoji 直接显示 */}
                 {currentMood && (
                   <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
-                    <div 
-                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex-shrink-0"
-                      data-emoji="true"
+                    <span 
+                      className="text-5xl sm:text-6xl flex-shrink-0"
                       style={{ 
-                        position: 'relative',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <span style={{ 
                         fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                        fontSize: '2.25rem',
-                        lineHeight: '1',
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                      }}>{currentMood.icon}</span>
-                    </div>
+                        textShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        lineHeight: 1,
+                      }}
+                    >{currentMood.icon}</span>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1 text-white drop-shadow-md">{currentMood.name}</p>
                       <p className="text-white/95 text-xs sm:text-sm font-medium drop-shadow-sm">{currentMood.description}</p>
