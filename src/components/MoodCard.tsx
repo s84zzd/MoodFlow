@@ -189,6 +189,13 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
             htmlEl.style.lineHeight = '1';
             htmlEl.style.textAlign = 'center';
             htmlEl.style.overflow = 'hidden';
+            
+            // 微调 span 位置
+            const span = htmlEl.querySelector('span');
+            if (span instanceof HTMLElement) {
+              span.style.display = 'block';
+              span.style.transform = 'translateY(-2px)';
+            }
           });
         }
       });
@@ -457,7 +464,10 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                         overflow: 'hidden',
                       }}
                     >
-                      <span>{currentMood.icon}</span>
+                      <span style={{ 
+                        display: 'block',
+                        transform: 'translateY(-2px)', // 微调向上移动
+                      }}>{currentMood.icon}</span>
                     </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1 text-white drop-shadow-md">{currentMood.name}</p>
