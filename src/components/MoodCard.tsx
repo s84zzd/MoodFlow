@@ -10,6 +10,7 @@ import html2canvas from 'html2canvas';
 import type { MoodRecord } from '@/hooks/useMoodHistory';
 import { moods } from '@/data/moods';
 import { QR_CODE_DATA_URL } from '@/assets/qr-code';
+import { getTwemojiUrl } from '@/lib/twemoji';
 
 interface MoodCardProps {
   record: MoodRecord | null;
@@ -136,8 +137,8 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       
       const canvas = await html2canvas(cardRef.current, {
         scale: window.devicePixelRatio || 2, // 使用设备像素比，提高清晰度
-        useCORS: false, // 关闭 CORS，因为所有资源都是 inline 的
-        allowTaint: true, // 允许污染，因为我们会用 toBlob
+        useCORS: true, // 启用 CORS 支持 Twemoji CDN 图片
+        allowTaint: false, // 禁止污染，确保可以导出
         backgroundColor: null, // 背景透明
         removeContainer: true, // 移除临时容器，避免残留
         logging: false,
@@ -174,7 +175,7 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           };
           clonedElement.style.background = gradients[currentMoodId] || gradients.calm;
           
-          // emoji 现在直接显示，无需特殊处理
+          // Twemoji 图片已经是标准图片，无需特殊处理
         }
       });
       
@@ -428,17 +429,17 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                   </div>
                 </div>
 
-                {/* 情绪展示 - 简化版：移除装饰框，emoji 直接显示 */}
+                {/* 情绪展示 - 使用 Twemoji 图片替代原生 emoji，解决 html2canvas 兼容性问题 */}
                 {currentMood && (
                   <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
-                    <span 
-                      className="text-5xl sm:text-6xl flex-shrink-0"
-                      style={{ 
-                        fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                        textShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                        lineHeight: 1,
-                      }}
-                    >{currentMood.icon}</span>
+                    <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex-shrink-0 flex items-center justify-center p-2 sm:p-3">
+                      <img 
+                        src={getTwemojiUrl(currentMood.icon)}
+                        alt={currentMood.name}
+                        className="w-full h-full object-contain"
+                        crossOrigin="anonymous"
+                      />
+                    </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1 text-white drop-shadow-md">{currentMood.name}</p>
                       <p className="text-white/95 text-xs sm:text-sm font-medium drop-shadow-sm">{currentMood.description}</p>
