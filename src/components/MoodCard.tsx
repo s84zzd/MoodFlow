@@ -179,22 +179,19 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           iconElements.forEach(el => {
             const htmlEl = el as HTMLElement;
             
-            // 不改变容器尺寸，保持原有的响应式设计
-            // 只修复 flex 布局确保居中
+            // 使用 flex 布局确保完美居中
+            htmlEl.style.position = 'relative';
             htmlEl.style.display = 'flex';
             htmlEl.style.alignItems = 'center';
             htmlEl.style.justifyContent = 'center';
             htmlEl.style.flexShrink = '0';
-            htmlEl.style.fontSize = '2.25rem';
-            htmlEl.style.lineHeight = '1';
-            htmlEl.style.textAlign = 'center';
-            htmlEl.style.overflow = 'hidden';
             
-            // 微调 span 位置
+            // 设置 span 样式
             const span = htmlEl.querySelector('span');
             if (span instanceof HTMLElement) {
+              span.style.fontSize = '2.25rem';
+              span.style.lineHeight = '1';
               span.style.display = 'block';
-              span.style.transform = 'translateY(-2px)';
             }
           });
         }
@@ -454,19 +451,20 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                 {currentMood && (
                   <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
                     <div 
-                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex items-center justify-center flex-shrink-0"
+                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex-shrink-0"
                       data-emoji="true"
                       style={{ 
                         fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                        fontSize: '2.25rem',
-                        lineHeight: '1',
-                        textAlign: 'center',
-                        overflow: 'hidden',
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
                       <span style={{ 
+                        fontSize: '2.25rem',
+                        lineHeight: '1',
                         display: 'block',
-                        transform: 'translateY(-2px)', // 微调向上移动
                       }}>{currentMood.icon}</span>
                     </div>
                     <div>
