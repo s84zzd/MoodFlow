@@ -125,12 +125,16 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       await new Promise(resolve => requestAnimationFrame(resolve));
       
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2, // 降低到2倍，提高稳定性
-        useCORS: true,
-        allowTaint: false, // 关键修改：不允许污染，确保inline资源
+        scale: 2,
+        useCORS: false, // 关闭 CORS，因为所有资源都是 inline 的
+        allowTaint: true, // 允许污染，因为我们会用 toBlob
         backgroundColor: null,
-        logging: true, // 开启日志以便调试
+        logging: false,
         imageTimeout: 15000,
+        ignoreElements: (element) => {
+          // 忽略可能导致问题的元素
+          return element.tagName === 'IFRAME' || element.tagName === 'VIDEO';
+        },
         onclone: (clonedDoc, clonedElement) => {
           // 确保克隆的文档有正确的视口
           clonedDoc.body.style.margin = '0';
@@ -187,34 +191,53 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
       cardRef.current.style.transform = originalTransform;
       cardRef.current.style.cursor = originalCursor;
       
-      // 简化下载流程，使用 toDataURL（最稳定的方式）
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
-      console.log('DataURL generated, length:', dataUrl.length);
-      
+      // 使用 toBlob 方法，避免 toDataURL 的跨域问题
       const filename = `MoodFlow_${currentMood?.name || '心情'}_${new Date().toISOString().slice(0, 10)}.png`;
       
-      // 创建下载链接
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = filename;
-      link.style.display = 'none';
-      
-      // 添加到页面
-      document.body.appendChild(link);
-      
-      // 触发下载
-      link.click();
-      
-      // 延迟清理
-      setTimeout(() => {
-        document.body.removeChild(link);
-      }, 100);
-      
-      console.log('Download triggered successfully');
+      await new Promise<void>((resolve, reject) => {
+        try {
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('生成 Blob 失败'));
+              return;
+            }
+            
+            console.log('Blob generated:', blob.size, 'bytes');
+            
+            // 创建下载链接
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.style.display = 'none';
+            
+            // 添加到页面
+            document.body.appendChild(link);
+            
+            // 触发下载
+            link.click();
+            
+            console.log('Download triggered successfully');
+            
+            // 延迟清理
+            setTimeout(() => {
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+              resolve();
+            }, 100);
+          }, 'image/png', 1.0);
+        } catch (err) {
+          reject(err);
+        }
+      });
       
     } catch (error) {
       console.error('保存图片失败:', error);
-      alert(`保存图片失败：${error instanceof Error ? error.message : '未知错误'}\n请查看控制台获取详细信息`);
+      if (error instanceof Error) {
+        alert(`保存图片失败：${error.message}\n\n请尝试：\n1. 刷新页面后重试\n2. 使用其他浏览器\n3. 截图保存`);
+      } else {
+        alert('保存图片失败，请截图保存');
+      }
     } finally {
       setIsSaving(false);
     }
