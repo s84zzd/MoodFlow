@@ -48,3 +48,22 @@ export const moodEmojiMap: Record<string, string> = {
 export function getMoodEmojiUrl(moodId: string): string {
   return moodEmojiMap[moodId] || moodEmojiMap.calm;
 }
+
+/**
+ * 根据情绪 ID 获取解码后的 SVG 内容（用于内联渲染）
+ */
+const svgContentMap: Record<string, string> = {
+  anxiety: atob(ANXIETY_SVG),
+  melancholy: atob(MELANCHOLY_SVG),
+  happy: atob(HAPPY_SVG),
+  regret: atob(REGRET_SVG),
+  calm: atob(CALM_SVG),
+  anticipation: atob(ANTICIPATION_SVG),
+  content: atob(HAPPY_SVG),
+  doubt: atob(DOUBT_SVG),
+  stress: atob(STRESS_SVG),
+};
+
+export function getMoodEmojiSvgContent(moodId: string): string {
+  return svgContentMap[moodId] || svgContentMap.calm;
+}

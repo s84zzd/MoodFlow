@@ -10,7 +10,7 @@ import html2canvas from 'html2canvas';
 import type { MoodRecord } from '@/hooks/useMoodHistory';
 import { moods } from '@/data/moods';
 import { QR_CODE_DATA_URL } from '@/assets/qr-code';
-import { getMoodEmojiUrl } from '@/assets/emoji-data';
+import { getMoodEmojiUrl, getMoodEmojiSvgContent } from '@/assets/emoji-data';
 
 interface MoodCardProps {
   record: MoodRecord | null;
@@ -175,7 +175,31 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           };
           clonedElement.style.background = gradients[currentMoodId] || gradients.calm;
           
-          // base64 内嵌图片无需特殊处理
+          // 将 base64 SVG 图片转换为内联 SVG 元素，解决华为手机上 html2canvas 不渲染图片的问题
+          const emojiImgs = clonedElement.querySelectorAll('img[alt]');
+          emojiImgs.forEach(img => {
+            const imgEl = img as HTMLImageElement;
+            const alt = imgEl.getAttribute('alt');
+            // 检查是否是情绪 emoji 图片（通过 alt 属性判断）
+            const moodNames = ['焦虑', '忧郁', '快乐', '懊悔', '平静', '期待', '满足', '怀疑', '压力'];
+            if (alt && moodNames.includes(alt)) {
+              const svgContent = getMoodEmojiSvgContent(currentMoodId);
+              if (svgContent) {
+                // 创建一个容器来持有 SVG
+                const container = document.createElement('div');
+                container.innerHTML = svgContent;
+                const svgEl = container.firstChild as SVGElement;
+                if (svgEl) {
+                  // 复制原图片的样式
+                  svgEl.setAttribute('class', imgEl.className);
+                  svgEl.style.width = '100%';
+                  svgEl.style.height = '100%';
+                  // 替换图片
+                  imgEl.parentNode?.replaceChild(svgEl, imgEl);
+                }
+              }
+            }
+          });
         }
       });
       
