@@ -16,6 +16,7 @@ import {
   shouldAutoGenerateMonthly,
   canManualGenerate,
   getRemainingManualCount,
+  isReportUpToDate,
 } from '@/services/reportService';
 import { ReportDetailModal } from '@/components/ReportDetailModal';
 
@@ -39,6 +40,10 @@ export function StatisticsView({ stats7Days, stats4Weeks, records = [] }: Statis
   const [weeklyRemaining, setWeeklyRemaining] = useState(2);
   const [monthlyRemaining, setMonthlyRemaining] = useState(4);
   
+  // 报告是否与当前数据一致（用于额度用完时提示）
+  const [isWeeklyUpToDate, setIsWeeklyUpToDate] = useState(true);
+  const [isMonthlyUpToDate, setIsMonthlyUpToDate] = useState(true);
+  
   // 确认弹窗状态
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -46,11 +51,15 @@ export function StatisticsView({ stats7Days, stats4Weeks, records = [] }: Statis
     remaining: number;
   }>({ isOpen: false, type: null, remaining: 0 });
   
-  // 更新剩余次数
+  // 更新剩余次数和报告状态
   useEffect(() => {
     setWeeklyRemaining(getRemainingManualCount('weekly'));
     setMonthlyRemaining(getRemainingManualCount('monthly'));
-  }, [weeklyReport, monthlyReport]);
+    
+    // 检测报告是否与当前数据一致
+    setIsWeeklyUpToDate(isReportUpToDate('weekly', stats7Days));
+    setIsMonthlyUpToDate(isReportUpToDate('monthly', stats4Weeks));
+  }, [weeklyReport, monthlyReport, stats7Days, stats4Weeks]);
 
   // 自动生成周报（每周六 18:00 后）
   useEffect(() => {
@@ -182,6 +191,7 @@ export function StatisticsView({ stats7Days, stats4Weeks, records = [] }: Statis
         onView={() => weeklyReport && handleViewReport(weeklyReport)}
         onManualGenerate={() => showConfirmDialog('weekly')}
         remainingCount={weeklyRemaining}
+        isUpToDate={isWeeklyUpToDate}
       />
 
       {/* 近4周统计 */}
@@ -205,6 +215,7 @@ export function StatisticsView({ stats7Days, stats4Weeks, records = [] }: Statis
         onView={() => monthlyReport && handleViewReport(monthlyReport)}
         onManualGenerate={() => showConfirmDialog('monthly')}
         remainingCount={monthlyRemaining}
+        isUpToDate={isMonthlyUpToDate}
       />
 
       {/* 报告详情弹窗 */}
@@ -419,9 +430,10 @@ interface ReportCardProps {
   onView: () => void;
   onManualGenerate?: () => void;
   remainingCount?: number;
+  isUpToDate?: boolean; // 报告是否与当前数据一致
 }
 
-function ReportCard({ type, report, isGenerating, hasEnoughData, onView, onManualGenerate, remainingCount }: ReportCardProps) {
+function ReportCard({ type, report, isGenerating, hasEnoughData, onView, onManualGenerate, remainingCount, isUpToDate = true }: ReportCardProps) {
   const isWeekly = type === 'weekly';
   
   if (!hasEnoughData) {
@@ -541,9 +553,20 @@ function ReportCard({ type, report, isGenerating, hasEnoughData, onView, onManua
       
       {!canRegenerate && remainingCount !== undefined && remainingCount < 999 && (
         <div className="mt-3 pt-3 border-t border-rose-100 text-center">
-          <span className="text-xs text-gray-400">
-            本周/月重新生成次数已用完
-          </span>
+          {!isUpToDate ? (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-amber-600 font-medium">
+                ▲ 数据已更新，报告可能与当前情况不符
+              </span>
+              <span className="text-[10px] text-gray-400">
+                {isWeekly ? '下周' : '下月'}可重新生成
+              </span>
+            </div>
+          ) : (
+            <span className="text-xs text-gray-400">
+              {isWeekly ? '本周' : '本月'}重新生成次数已用完
+            </span>
+          )}
         </div>
       )}
     </div>

@@ -20,6 +20,7 @@ const ENABLE_REPORT_LIMIT = import.meta.env.VITE_ENABLE_REPORT_LIMIT !== 'false'
 // 缓存键前缀
 const CACHE_PREFIX = 'moodflow_report_';
 const MANUAL_COUNT_PREFIX = 'moodflow_report_manual_count_';
+const CACHE_SNAPSHOT_PREFIX = 'moodflow_report_snapshot_';
 
 // 手动生成限制
 const WEEKLY_MANUAL_LIMIT = 2;
@@ -159,15 +160,63 @@ export function getRemainingManualCount(type: 'weekly' | 'monthly'): number {
 }
 
 /**
- * 获取缓存的报告
- * 按周期缓存，而非固定时长
+ * 检测报告是否与当前数据一致
+ * 用于在额度用完时提示用户
+ * @returns true 表示报告是最新的，false 表示数据已变化
  */
-function getCachedReport(type: 'weekly' | 'monthly'): AIReport | null {
+export function isReportUpToDate(type: 'weekly' | 'monthly', stats: PeriodStats): boolean {
+  const periodKey = getPeriodKey(type);
+  const snapshotKey = `${CACHE_SNAPSHOT_PREFIX}${type}_${periodKey}`;
+  const cachedSnapshot = localStorage.getItem(snapshotKey);
+  
+  // 没有缓存快照，认为不一致
+  if (!cachedSnapshot) return true;
+  
+  const currentSnapshot = generateDataSnapshot(stats);
+  return cachedSnapshot === currentSnapshot;
+}
+
+/**
+ * 生成数据快照，用于验证缓存是否仍然有效
+ * 包含：总记录数、主要情绪、情绪分布哈希
+ */
+function generateDataSnapshot(stats: PeriodStats): string {
+  const total = stats.total;
+  const topEmotions = stats.topEmotions.slice(0, 3).join(',');
+  const distribution = stats.emotions
+    .map(e => `${e.name}:${e.count}`)
+    .join('|');
+  return `${total}|${topEmotions}|${distribution}`;
+}
+
+/**
+ * 获取缓存的报告
+ * 按周期缓存，并验证数据是否变化
+ * @param stats 当前统计数据，用于验证缓存有效性
+ */
+function getCachedReport(type: 'weekly' | 'monthly', stats?: PeriodStats): AIReport | null {
   try {
     const periodKey = getPeriodKey(type);
     const key = `${CACHE_PREFIX}${type}_${periodKey}`;
     const cached = localStorage.getItem(key);
     if (!cached) return null;
+    
+    // 如果提供了 stats，验证数据是否变化
+    if (stats) {
+      const snapshotKey = `${CACHE_SNAPSHOT_PREFIX}${type}_${periodKey}`;
+      const cachedSnapshot = localStorage.getItem(snapshotKey);
+      const currentSnapshot = generateDataSnapshot(stats);
+      
+      if (cachedSnapshot !== currentSnapshot) {
+        console.log(`[Report Service] Data changed, invalidating ${type} cache`);
+        console.log(`[Report Service] Cached snapshot: ${cachedSnapshot}`);
+        console.log(`[Report Service] Current snapshot: ${currentSnapshot}`);
+        // 数据变化，清除旧缓存
+        localStorage.removeItem(key);
+        localStorage.removeItem(snapshotKey);
+        return null;
+      }
+    }
     
     return JSON.parse(cached) as AIReport;
   } catch {
@@ -176,13 +225,16 @@ function getCachedReport(type: 'weekly' | 'monthly'): AIReport | null {
 }
 
 /**
- * 缓存报告
+ * 缓存报告和数据快照
  */
-function cacheReport(report: AIReport): void {
+function cacheReport(report: AIReport, stats: PeriodStats): void {
   try {
     const periodKey = getPeriodKey(report.type);
     const key = `${CACHE_PREFIX}${report.type}_${periodKey}`;
+    const snapshotKey = `${CACHE_SNAPSHOT_PREFIX}${report.type}_${periodKey}`;
+    
     localStorage.setItem(key, JSON.stringify(report));
+    localStorage.setItem(snapshotKey, generateDataSnapshot(stats));
   } catch (error) {
     console.error('[Report Service] Failed to cache report:', error);
   }
@@ -504,8 +556,8 @@ export async function generateWeeklyReport(
     return null;
   }
   
-  // 检查缓存
-  const cached = getCachedReport('weekly');
+  // 检查缓存（验证数据是否变化）
+  const cached = getCachedReport('weekly', stats);
   if (cached) {
     console.log('[Report Service] Using cached weekly report');
     return cached;
@@ -540,7 +592,7 @@ export async function generateWeeklyReport(
       trend: parsed.trend || 'stable',
     };
     
-    cacheReport(report);
+    cacheReport(report, stats);
     
     // 手动生成时增加次数
     if (isManual) {
@@ -569,9 +621,9 @@ export async function generateMonthlyReport(
     return null;
   }
   
-  // 检查缓存（手动生成时跳过缓存）
+  // 检查缓存（手动生成时跳过缓存，并验证数据是否变化）
   if (!isManual) {
-    const cached = getCachedReport('monthly');
+    const cached = getCachedReport('monthly', stats);
     if (cached) {
       console.log('[Report Service] Using cached monthly report');
       return cached;
@@ -621,7 +673,7 @@ export async function generateMonthlyReport(
       report.suggestions.push(parsed.nextMonthFocus);
     }
     
-    cacheReport(report);
+    cacheReport(report, stats);
     
     // 手动生成时增加次数
     if (isManual) {
@@ -649,10 +701,12 @@ export async function regenerateReport(
     return null;
   }
   
-  // 清除缓存
+  // 清除缓存和快照
   const periodKey = getPeriodKey(type);
   const key = `${CACHE_PREFIX}${type}_${periodKey}`;
+  const snapshotKey = `${CACHE_SNAPSHOT_PREFIX}${type}_${periodKey}`;
   localStorage.removeItem(key);
+  localStorage.removeItem(snapshotKey);
   
   // 重新生成（标记为手动生成）
   if (type === 'weekly') {
