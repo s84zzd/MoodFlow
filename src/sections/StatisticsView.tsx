@@ -559,7 +559,7 @@ function ReportCard({ type, report, isGenerating, hasEnoughData, onView, onManua
                 ▲ 数据已更新，报告可能与当前情况不符
               </span>
               <span className="text-[10px] text-gray-400">
-                {isWeekly ? '下周' : '下月'}可重新生成
+                {isWeekly ? '周六 18:00 将自动更新完整报告' : '月末 18:00 将自动更新完整报告'}
               </span>
             </div>
           ) : (
