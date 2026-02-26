@@ -9,6 +9,7 @@ import { MapPin, Heart, Calendar, Download, X, Edit2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import type { MoodRecord } from '@/hooks/useMoodHistory';
 import { moods } from '@/data/moods';
+import { QR_CODE_DATA_URL } from '@/assets/qr-code';
 
 interface MoodCardProps {
   record: MoodRecord | null;
@@ -441,13 +442,12 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                     <p>记录情绪，关爱自己</p>
                     <p>moodflow.app</p>
                   </div>
-                  {/* 二维码 - 使用固定图片 */}
+                  {/* 二维码 - 使用 base64 DataURL */}
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg overflow-hidden p-1">
                     <img 
-                      src="/qr-code.jpg" 
+                      src={QR_CODE_DATA_URL} 
                       alt="MoodFlow QR Code" 
                       className="w-full h-full object-contain"
-                      crossOrigin="anonymous"
                       data-qr="true"
                     />
                   </div>
