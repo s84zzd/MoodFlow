@@ -155,31 +155,29 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           };
           clonedElement.style.background = gradients[currentMoodId] || gradients.calm;
           
-          // 修复 emoji 位置 - 使用绝对定位确保完美居中
+          // 修复 emoji 位置 - 确保在克隆的 DOM 中正确居中
           const iconElements = clonedElement.querySelectorAll('[data-emoji]');
           iconElements.forEach(el => {
             const htmlEl = el as HTMLElement;
             
-            // 设置容器为相对定位
-            htmlEl.style.position = 'relative';
-            htmlEl.style.width = '80px'; // 固定宽度 (20 * 4 = 80px for desktop)
-            htmlEl.style.height = '80px'; // 固定高度
+            // 不改变容器尺寸，保持原有的响应式设计
+            // 只修复 flex 布局确保居中
             htmlEl.style.display = 'flex';
             htmlEl.style.alignItems = 'center';
             htmlEl.style.justifyContent = 'center';
-            htmlEl.style.overflow = 'hidden';
+            htmlEl.style.flexShrink = '0';
             
             // 找到emoji span并设置样式
             const span = htmlEl.querySelector('span');
             if (span instanceof HTMLElement) {
               span.style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-              span.style.fontSize = '40px'; // 固定大小
-              span.style.lineHeight = '1'; // 关键：使用无单位的line-height
-              span.style.display = 'inline-block';
+              span.style.fontSize = '2.25rem'; // 36px，使用 rem 更稳定
+              span.style.lineHeight = '1'; // 关键：使用1避免额外间距
+              span.style.display = 'block';
               span.style.textAlign = 'center';
-              span.style.verticalAlign = 'middle';
               span.style.margin = '0';
               span.style.padding = '0';
+              span.style.transform = 'translateY(0)'; // 确保没有偏移
             }
           });
         }
@@ -431,16 +429,20 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                 {currentMood && (
                   <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
                     <div 
-                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex items-center justify-center"
+                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/40 shadow-lg border border-white/30 flex items-center justify-center flex-shrink-0"
                       data-emoji="true"
                       style={{ 
                         fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                        fontSize: '36px',
-                        lineHeight: '56px',
-                        textAlign: 'center',
                       }}
                     >
-                      <span>{currentMood.icon}</span>
+                      <span style={{
+                        fontSize: '2.25rem',
+                        lineHeight: '1',
+                        display: 'block',
+                        textAlign: 'center',
+                        margin: 0,
+                        padding: 0,
+                      }}>{currentMood.icon}</span>
                     </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1 text-white drop-shadow-md">{currentMood.name}</p>
