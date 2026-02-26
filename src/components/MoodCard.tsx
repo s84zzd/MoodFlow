@@ -140,10 +140,12 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
           // 确保克隆的文档有正确的视口
           clonedDoc.body.style.margin = '0';
           clonedDoc.body.style.padding = '0';
+          clonedDoc.body.style.backgroundColor = 'transparent';
           
           // 确保克隆元素本身没有边距导致白边
           clonedElement.style.margin = '0';
           clonedElement.style.padding = '0';
+          clonedElement.style.backgroundColor = 'transparent';
           
           // 强制设置背景渐变 - 使用与 Tailwind 一致的方向和颜色
           const currentMoodId = currentMood?.id || 'calm';
@@ -171,19 +173,10 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
             htmlEl.style.alignItems = 'center';
             htmlEl.style.justifyContent = 'center';
             htmlEl.style.flexShrink = '0';
-            
-            // 找到emoji span并设置样式
-            const span = htmlEl.querySelector('span');
-            if (span instanceof HTMLElement) {
-              span.style.fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-              span.style.fontSize = '2.25rem'; // 36px，使用 rem 更稳定
-              span.style.lineHeight = '1'; // 关键：使用1避免额外间距
-              span.style.display = 'block';
-              span.style.textAlign = 'center';
-              span.style.margin = '0';
-              span.style.padding = '0';
-              span.style.transform = 'translateY(0)'; // 确保没有偏移
-            }
+            htmlEl.style.fontSize = '2.25rem';
+            htmlEl.style.lineHeight = '1';
+            htmlEl.style.textAlign = 'center';
+            htmlEl.style.overflow = 'hidden';
           });
         }
       });
@@ -387,7 +380,11 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
             <div
               ref={cardRef}
               className={`relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br ${getGradient(currentMood?.id)} max-h-[80vh] sm:max-h-none cursor-grab active:cursor-grabbing select-none`}
-              style={{ margin: 0, padding: 0 }}
+              style={{ 
+                margin: 0, 
+                padding: 0,
+                backgroundColor: 'transparent',
+              }}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -439,16 +436,13 @@ export function MoodCard({ record, quote, isOpen, onClose }: MoodCardProps) {
                       data-emoji="true"
                       style={{ 
                         fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                      }}
-                    >
-                      <span style={{
                         fontSize: '2.25rem',
                         lineHeight: '1',
-                        display: 'block',
                         textAlign: 'center',
-                        margin: 0,
-                        padding: 0,
-                      }}>{currentMood.icon}</span>
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <span>{currentMood.icon}</span>
                     </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1 text-white drop-shadow-md">{currentMood.name}</p>
