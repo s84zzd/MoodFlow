@@ -6,6 +6,10 @@ export type Mood = {
   ringColor: string;
   icon: string;
   description: string;
+  // 情绪维度属性（可选）
+  valence?: number;  // 效价 1-6 (负面到正面)
+  arousal?: number;  // 唤醒度 1-6 (低到高)
+  energy?: number;   // 能量值
 };
 
 export type Scene = {
