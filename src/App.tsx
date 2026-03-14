@@ -6,13 +6,15 @@ import { SocialShare } from '@/sections/SocialShare';
 import { AIAdviceSection } from '@/sections/AIAdvice';
 import { Profile } from '@/sections/Profile';
 import { CheckInCompleteModal } from '@/components/CheckInCompleteModal';
+import { AuthModal } from '@/components/AuthModal';
 import { useMoodHistory } from '@/hooks/useMoodHistory';
 import { useCustomActivities } from '@/hooks/useCustomActivities';
 import { useAIAdvice } from '@/hooks/useAIAdvice';
 import { TestDataButton } from '@/components/TestDataButton';
 import { DebugReportCount } from '@/components/DebugReportCount';
+import { isLoggedIn, logout } from '@/services/api';
 import type { Mood, Scene } from '@/types';
-import { Heart, Share2, Sparkles, Home, BarChart3, User } from 'lucide-react';
+import { Heart, Share2, Sparkles, Home, BarChart3, User, LogOut } from 'lucide-react';
 import './App.css';
 
 type View = 'home' | 'share' | 'advice' | 'profile';
@@ -25,6 +27,10 @@ function App() {
   const [showScene, setShowScene] = useState(false);
   const [showActivities, setShowActivities] = useState(false);
   const [checkInComplete, setCheckInComplete] = useState(false);
+  
+  // 登录状态
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const progressRef = useRef<HTMLDivElement>(null);
 
@@ -62,6 +68,11 @@ function App() {
       progressRef.current.style.transition = 'width 0.5s ease-out';
     }
   }, [selectedMood, selectedScene, checkInComplete]);
+
+  // Check login status
+  useEffect(() => {
+    setLoggedIn(isLoggedIn());
+  }, []);
 
   // Handle mood selection
   const handleMoodSelect = useCallback((mood: Mood) => {
@@ -235,6 +246,30 @@ function App() {
                 <span>{moodStats.totalRecords} 次记录</span>
               </div>
             )}
+            
+            {/* Login/Logout button */}
+            <div className="flex items-center gap-2">
+              {loggedIn ? (
+                <button
+                  onClick={() => {
+                    logout();
+                    setLoggedIn(false);
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">退出</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-rose-500 text-white hover:bg-rose-600 rounded-lg transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline">登录</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -313,6 +348,13 @@ function App() {
         isOpen={checkInComplete}
         onClose={handleCheckInCompleteClose}
         moodName={selectedMood?.name}
+      />
+
+      {/* 登录/注册弹窗 */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={() => setLoggedIn(true)}
       />
 
       {/* Test Data Button (Dev only) */}
