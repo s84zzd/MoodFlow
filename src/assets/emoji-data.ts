@@ -29,17 +29,64 @@ const STRESS_SVG = 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdC
 
 /**
  * 根据情绪 ID 获取内嵌的 Twemoji SVG DataURL
+ * 36种情绪映射到已有SVG（相似情绪复用）
  */
 export const moodEmojiMap: Record<string, string> = {
-  anxiety: `data:image/svg+xml;base64,${ANXIETY_SVG}`,
-  melancholy: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`,
+  // ===== 正面高能量区 (valence 6) =====
+  serenity: `data:image/svg+xml;base64,${CALM_SVG}`,       // 宁静 -> 平静
+  relief: `data:image/svg+xml;base64,${CALM_SVG}`,         // 安心 -> 平静
+  contentment: `data:image/svg+xml;base64,${HAPPY_SVG}`,   // 满足 -> 快乐
+  joy: `data:image/svg+xml;base64,${HAPPY_SVG}`,           // 快乐
+  delight: `data:image/svg+xml;base64,${HAPPY_SVG}`,       // 喜悦 -> 快乐
+  excitement: `data:image/svg+xml;base64,${ANTICIPATION_SVG}`, // 兴奋 -> 期待
+  
+  // ===== 正面社会/认知区 (valence 5) =====
+  cherish: `data:image/svg+xml;base64,${HAPPY_SVG}`,       // 珍爱 -> 快乐
+  appreciation: `data:image/svg+xml;base64,${HAPPY_SVG}`,  // 欣赏 -> 快乐
+  optimism: `data:image/svg+xml;base64,${HAPPY_SVG}`,      // 乐观 -> 快乐
+  pride: `data:image/svg+xml;base64,${HAPPY_SVG}`,         // 自豪 -> 快乐
+  gratitude: `data:image/svg+xml;base64,${HAPPY_SVG}`,     // 感激 -> 快乐
+  curiosity: `data:image/svg+xml;base64,${ANTICIPATION_SVG}`, // 好奇 -> 期待
+  
+  // ===== 中性混合区 (valence 4) =====
+  relieved: `data:image/svg+xml;base64,${CALM_SVG}`,       // 释然 -> 平静
+  nostalgia: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`, // 怀念 -> 忧郁
+  surprise: `data:image/svg+xml;base64,${ANTICIPATION_SVG}`, // 惊讶 -> 期待
+  anticipation: `data:image/svg+xml;base64,${ANTICIPATION_SVG}`, // 期待
+  awe: `data:image/svg+xml;base64,${ANTICIPATION_SVG}`,    // 敬畏 -> 期待
+  confusion: `data:image/svg+xml;base64,${DOUBT_SVG}`,     // 困惑 -> 怀疑
+  
+  // ===== 轻微负面区 (valence 3) =====
+  melancholy: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`, // 惆怅 -> 忧郁
+  lost: `data:image/svg+xml;base64,${DOUBT_SVG}`,          // 迷茫 -> 怀疑
+  hesitation: `data:image/svg+xml;base64,${DOUBT_SVG}`,    // 犹豫 -> 怀疑
+  unease: `data:image/svg+xml;base64,${ANXIETY_SVG}`,      // 忐忑 -> 焦虑
+  anxiety: `data:image/svg+xml;base64,${ANXIETY_SVG}`,     // 焦虑
+  conflict: `data:image/svg+xml;base64,${STRESS_SVG}`,     // 矛盾 -> 压力
+  
+  // ===== 中度负面区 (valence 2) =====
+  boredom: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`,  // 厌倦 -> 忧郁
+  loneliness: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`, // 孤独 -> 忧郁
+  frustration: `data:image/svg+xml;base64,${STRESS_SVG}`,  // 沮丧 -> 压力
+  disappointment: `data:image/svg+xml;base64,${REGRET_SVG}`, // 失望 -> 懊悔
+  suppression: `data:image/svg+xml;base64,${STRESS_SVG}`,  // 压抑 -> 压力
+  sadness: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`,  // 悲伤 -> 忧郁
+  
+  // ===== 深度负面区 (valence 1) =====
+  numbness: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`, // 麻木 -> 忧郁
+  emptiness: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`, // 空虚 -> 忧郁
+  shame: `data:image/svg+xml;base64,${REGRET_SVG}`,        // 羞愧 -> 懊悔
+  fear: `data:image/svg+xml;base64,${ANXIETY_SVG}`,        // 恐惧 -> 焦虑
+  pain: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`,     // 痛苦 -> 忧郁
+  despair: `data:image/svg+xml;base64,${MELANCHOLY_SVG}`,  // 绝望 -> 忧郁
+  
+  // ===== 兼容旧ID =====
   happy: `data:image/svg+xml;base64,${HAPPY_SVG}`,
-  regret: `data:image/svg+xml;base64,${REGRET_SVG}`,
   calm: `data:image/svg+xml;base64,${CALM_SVG}`,
-  anticipation: `data:image/svg+xml;base64,${ANTICIPATION_SVG}`,
-  content: `data:image/svg+xml;base64,${HAPPY_SVG}`, // 满足使用和快乐相同的 emoji
+  content: `data:image/svg+xml;base64,${HAPPY_SVG}`,
   doubt: `data:image/svg+xml;base64,${DOUBT_SVG}`,
   stress: `data:image/svg+xml;base64,${STRESS_SVG}`,
+  regret: `data:image/svg+xml;base64,${REGRET_SVG}`,
 };
 
 /**
@@ -51,17 +98,64 @@ export function getMoodEmojiUrl(moodId: string): string {
 
 /**
  * 根据情绪 ID 获取解码后的 SVG 内容（用于内联渲染）
+ * 36种情绪映射
  */
 const svgContentMap: Record<string, string> = {
-  anxiety: atob(ANXIETY_SVG),
-  melancholy: atob(MELANCHOLY_SVG),
-  happy: atob(HAPPY_SVG),
-  regret: atob(REGRET_SVG),
-  calm: atob(CALM_SVG),
+  // ===== 正面高能量区 (valence 6) =====
+  serenity: atob(CALM_SVG),
+  relief: atob(CALM_SVG),
+  contentment: atob(HAPPY_SVG),
+  joy: atob(HAPPY_SVG),
+  delight: atob(HAPPY_SVG),
+  excitement: atob(ANTICIPATION_SVG),
+  
+  // ===== 正面社会/认知区 (valence 5) =====
+  cherish: atob(HAPPY_SVG),
+  appreciation: atob(HAPPY_SVG),
+  optimism: atob(HAPPY_SVG),
+  pride: atob(HAPPY_SVG),
+  gratitude: atob(HAPPY_SVG),
+  curiosity: atob(ANTICIPATION_SVG),
+  
+  // ===== 中性混合区 (valence 4) =====
+  relieved: atob(CALM_SVG),
+  nostalgia: atob(MELANCHOLY_SVG),
+  surprise: atob(ANTICIPATION_SVG),
   anticipation: atob(ANTICIPATION_SVG),
+  awe: atob(ANTICIPATION_SVG),
+  confusion: atob(DOUBT_SVG),
+  
+  // ===== 轻微负面区 (valence 3) =====
+  melancholy: atob(MELANCHOLY_SVG),
+  lost: atob(DOUBT_SVG),
+  hesitation: atob(DOUBT_SVG),
+  unease: atob(ANXIETY_SVG),
+  anxiety: atob(ANXIETY_SVG),
+  conflict: atob(STRESS_SVG),
+  
+  // ===== 中度负面区 (valence 2) =====
+  boredom: atob(MELANCHOLY_SVG),
+  loneliness: atob(MELANCHOLY_SVG),
+  frustration: atob(STRESS_SVG),
+  disappointment: atob(REGRET_SVG),
+  suppression: atob(STRESS_SVG),
+  sadness: atob(MELANCHOLY_SVG),
+  
+  // ===== 深度负面区 (valence 1) =====
+  numbness: atob(MELANCHOLY_SVG),
+  emptiness: atob(MELANCHOLY_SVG),
+  shame: atob(REGRET_SVG),
+  fear: atob(ANXIETY_SVG),
+  pain: atob(MELANCHOLY_SVG),
+  despair: atob(MELANCHOLY_SVG),
+  
+  // ===== 兼容旧ID =====
+  happy: atob(HAPPY_SVG),
+  calm: atob(CALM_SVG),
   content: atob(HAPPY_SVG),
   doubt: atob(DOUBT_SVG),
   stress: atob(STRESS_SVG),
+  regret: atob(REGRET_SVG),
 };
 
 export function getMoodEmojiSvgContent(moodId: string): string {

@@ -14,15 +14,18 @@ const ENABLE_AI = import.meta.env.VITE_ENABLE_AI === 'true';
 
 // 情绪映射（中文 -> 英文，用于提示词）
 const moodMapping: Record<string, string> = {
-  '焦虑': 'anxiety',
-  '忧郁': 'melancholy',
-  '快乐': 'happy',
-  '懊悔': 'regret',
-  '平静': 'calm',
-  '期待': 'anticipation',
-  '满足': 'content',
-  '怀疑': 'doubt',
-  '压力': 'stress',
+  // 正面高能量区 (valence 6)
+  '宁静': 'serenity', '安心': 'relief', '满足': 'contentment', '快乐': 'joy', '喜悦': 'delight', '兴奋': 'excitement',
+  // 正面社会/认知区 (valence 5)
+  '珍爱': 'cherish', '欣赏': 'appreciation', '乐观': 'optimism', '自豪': 'pride', '感激': 'gratitude', '好奇': 'curiosity',
+  // 中性混合区 (valence 4)
+  '释然': 'relieved', '怀念': 'nostalgia', '惊讶': 'surprise', '期待': 'anticipation', '敬畏': 'awe', '困惑': 'confusion',
+  // 轻微负面区 (valence 3)
+  '惆怅': 'melancholy', '迷茫': 'lost', '犹豫': 'hesitation', '忐忑': 'unease', '焦虑': 'anxiety', '矛盾': 'conflict',
+  // 中度负面区 (valence 2)
+  '厌倦': 'boredom', '孤独': 'loneliness', '沮丧': 'frustration', '失望': 'disappointment', '压抑': 'suppression', '悲伤': 'sadness',
+  // 深度负面区 (valence 1)
+  '麻木': 'numbness', '空虚': 'emptiness', '羞愧': 'shame', '恐惧': 'fear', '痛苦': 'pain', '绝望': 'despair',
 };
 
 interface AIRequestParams {
@@ -77,15 +80,18 @@ function buildUserPrompt(params: AIRequestParams): string {
   
   // 情绪中文名映射（用于显示）
   const moodNameMapping: Record<string, string> = {
-    'anxiety': '焦虑',
-    'melancholy': '忧郁',
-    'happy': '快乐',
-    'regret': '懊悔',
-    'calm': '平静',
-    'anticipation': '期待',
-    'content': '满足',
-    'doubt': '怀疑',
-    'stress': '压力',
+    // 正面高能量区 (valence 6)
+    'serenity': '宁静', 'relief': '安心', 'contentment': '满足', 'joy': '快乐', 'delight': '喜悦', 'excitement': '兴奋',
+    // 正面社会/认知区 (valence 5)
+    'cherish': '珍爱', 'appreciation': '欣赏', 'optimism': '乐观', 'pride': '自豪', 'gratitude': '感激', 'curiosity': '好奇',
+    // 中性混合区 (valence 4)
+    'relieved': '释然', 'nostalgia': '怀念', 'surprise': '惊讶', 'anticipation': '期待', 'awe': '敬畏', 'confusion': '困惑',
+    // 轻微负面区 (valence 3)
+    'melancholy': '惆怅', 'lost': '迷茫', 'hesitation': '犹豫', 'unease': '忐忑', 'anxiety': '焦虑', 'conflict': '矛盾',
+    // 中度负面区 (valence 2)
+    'boredom': '厌倦', 'loneliness': '孤独', 'frustration': '沮丧', 'disappointment': '失望', 'suppression': '压抑', 'sadness': '悲伤',
+    // 深度负面区 (valence 1)
+    'numbness': '麻木', 'emptiness': '空虚', 'shame': '羞愧', 'fear': '恐惧', 'pain': '痛苦', 'despair': '绝望',
   };
   
   // 将英文情绪ID转换为中文名
