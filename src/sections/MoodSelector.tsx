@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { Mood } from '@/types';
 import { moods } from '@/data/moods';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import type { MoodRecord } from '@/hooks/useMoodHistory';
 
 interface MoodSelectorProps {
   selectedMood: Mood | null;
   onSelect: (mood: Mood) => void;
+  records?: MoodRecord[]; // 打卡记录，用于智能排序
 }
 
-// 主页默认显示的常用情绪（9个）
-const COMMON_MOOD_IDS = [
+// 默认显示的情绪数量
+const DEFAULT_DISPLAY_COUNT = 9;
+
+// 默认常用情绪（当没有打卡记录时使用）
+const DEFAULT_MOOD_IDS = [
   'joy',           // 快乐
   'anxiety',       // 焦虑
   'sadness',       // 悲伤
@@ -21,12 +26,56 @@ const COMMON_MOOD_IDS = [
   'gratitude',     // 感激
 ];
 
-// 获取常用情绪
-const getCommonMoods = () => {
-  return COMMON_MOOD_IDS.map(id => moods.find(m => m.id === id)).filter(Boolean) as Mood[];
+/**
+ * 根据打卡记录计算情绪显示顺序
+ * - 打卡多的情绪优先显示
+ * - 从未打卡的按默认顺序
+ */
+const getSortedMoodsByFrequency = (records: MoodRecord[]): Mood[] => {
+  // 统计每个情绪的打卡次数
+  const frequencyMap: Record<string, number> = {};
+  records.forEach(record => {
+    frequencyMap[record.moodId] = (frequencyMap[record.moodId] || 0) + 1;
+  });
+  
+  // 复制情绪数组并排序
+  const sortedMoods = [...moods].sort((a, b) => {
+    const freqA = frequencyMap[a.id] || 0;
+    const freqB = frequencyMap[b.id] || 0;
+    
+    // 打卡多的排前面
+    if (freqA !== freqB) {
+      return freqB - freqA;
+    }
+    
+    // 打卡次数相同时，按默认顺序
+    const defaultIndexA = DEFAULT_MOOD_IDS.indexOf(a.id);
+    const defaultIndexB = DEFAULT_MOOD_IDS.indexOf(b.id);
+    
+    // 都在默认列表中，按默认顺序
+    if (defaultIndexA !== -1 && defaultIndexB !== -1) {
+      return defaultIndexA - defaultIndexB;
+    }
+    
+    // 只有一个在默认列表中，默认列表的排前面
+    if (defaultIndexA !== -1) return -1;
+    if (defaultIndexB !== -1) return 1;
+    
+    // 都不在默认列表中，按原始顺序
+    return moods.findIndex(m => m.id === a.id) - moods.findIndex(m => m.id === b.id);
+  });
+  
+  return sortedMoods;
 };
 
-export function MoodSelector({ selectedMood, onSelect }: MoodSelectorProps) {
+/**
+ * 获取默认情绪列表
+ */
+const getDefaultMoods = (): Mood[] => {
+  return DEFAULT_MOOD_IDS.map(id => moods.find(m => m.id === id)).filter(Boolean) as Mood[];
+};
+
+export function MoodSelector({ selectedMood, onSelect, records = [] }: MoodSelectorProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
@@ -39,8 +88,20 @@ export function MoodSelector({ selectedMood, onSelect }: MoodSelectorProps) {
     onSelect(mood);
   };
 
+  // 根据打卡频率智能排序情绪
+  const sortedMoods = useMemo(() => {
+    if (records.length === 0) {
+      // 没有打卡记录时使用默认顺序
+      return getDefaultMoods();
+    }
+    return getSortedMoodsByFrequency(records);
+  }, [records]);
+
   // 根据showAll决定显示哪些情绪
-  const displayMoods = showAll ? moods : getCommonMoods();
+  const displayMoods = showAll ? sortedMoods : sortedMoods.slice(0, DEFAULT_DISPLAY_COUNT);
+  
+  // 计算隐藏的情绪数量
+  const hiddenCount = sortedMoods.length - DEFAULT_DISPLAY_COUNT;
 
   return (
     <section className="min-h-screen flex flex-col items-center justify-center px-4 py-16 relative overflow-hidden">
@@ -145,7 +206,7 @@ export function MoodSelector({ selectedMood, onSelect }: MoodSelectorProps) {
         ) : (
           <>
             <ChevronDown className="w-5 h-5" />
-            <span>更多情绪 ({moods.length - COMMON_MOOD_IDS.length}+)</span>
+            <span>更多情绪 ({hiddenCount > 0 ? hiddenCount : 0}+)</span>
           </>
         )}
       </button>

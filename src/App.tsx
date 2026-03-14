@@ -280,9 +280,10 @@ function App() {
           <>
             {/* Mood Selection Section */}
             <div id="mood-section">
-              <MoodSelector 
+              <MoodSelector
                 selectedMood={selectedMood} 
-                onSelect={handleMoodSelect} 
+                onSelect={handleMoodSelect}
+                records={records}
               />
             </div>
 
